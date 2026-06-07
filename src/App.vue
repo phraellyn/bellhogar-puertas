@@ -4,7 +4,7 @@
     <v-app-bar color="secondary" elevation="3" class="px-3 border-b-golden">
       <!-- Logotipo Corporativo de BellHogar (Dinámico según el tema) -->
       <v-img
-        :src="currentTheme === 'dark' ? '/src/assets/BellHogar Oscuro.png' : '/src/assets/BellHogar Claro.png'"
+        :src="currentTheme === 'dark' ? '/BellHogar Oscuro.png' : '/BellHogar Claro.png'"
         max-height="40"
         max-width="160"
         class="mr-3"
