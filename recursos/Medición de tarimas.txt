@@ -1,0 +1,48 @@
+--- Page 1 ---
+Medición  de  TariMasMedición  de  TariMas
+Cliente: 
+Fecha de ejecución Vendedor
+Dirección: 
+Email: Zona parquímetro: 
+Teléfono Móvil: Fijo: 
+Fecha visita Tienda
+www.bellhogar.com      -      910 42 91 891/1 
+Mod. TARIMA: 
+RODAPIE: 
+JUNTAS: 
+BISAGRAS: 
+Grosor: Aislante:
+Modelo: Color:
+Transición:
+Parquet: Solera: Plaqueta: Otros:
+Desmontaje suelo existente: Picado suelo:
+Echar solera:
+Echar pasta niveladora:
+Observaciones:
+Corte de puertas:
+Corte de puertas blindadas:
+Movimiento de muebles existentes:
+Colocación sobre:
+Dilatación:
+Mamperlán:
+Tira:
+Mecanizado:
+Zona
+Uds.
+Uds.
+Uds.
+Uds.
+Uds.
+Uds.
+M2 M2
+M2
+M2
++ Añadir línea
++ Añadir Boceto + Añadir Foto
+Medidas suelos ObservacionesM2
+Medida
+Quitar rodapie cerámico y rematar:
+Alto: Grosor:
+Observaciones: 
+ 
+
