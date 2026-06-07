@@ -113,7 +113,7 @@
               prepend-icon="mdi-cloud-check"
               class="font-weight-bold px-1"
             >
-              Dibujo guardado
+              Guardado
             </v-chip>
             <v-chip
               v-else-if="saveStatus === 'saving'"
@@ -133,7 +133,7 @@
               prepend-icon="mdi-cloud-upload-outline"
               class="font-weight-bold px-1 animate-pulse"
             >
-              Cambios sin guardar
+              Sin guardar
             </v-chip>
           </div>
         </div>
