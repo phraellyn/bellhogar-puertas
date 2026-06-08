@@ -242,6 +242,18 @@
         </div>
 
         <div class="d-flex align-center gap-2">
+          <!-- Botón Enviar Ficha por Email -->
+          <v-btn
+            prepend-icon="mdi-email-send"
+            color="primary"
+            variant="flat"
+            size="small"
+            class="font-weight-bold mr-2 text-uppercase"
+            @click="openSendEmailDialog"
+          >
+            Enviar por Email
+          </v-btn>
+          
           <!-- Sutil indicador de guardado automático del formulario técnico -->
           <v-chip
             v-if="formSaveStatus === 'saved'"
@@ -1112,6 +1124,53 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- DIÁLOGO: ENVIAR RESUMEN POR EMAIL -->
+    <v-dialog v-model="emailDialog" max-width="500px" persistent>
+      <v-card color="surface" class="border-golden">
+        <v-card-title class="text-h5 font-weight-bold text-white pa-4 bg-secondary border-b d-flex justify-space-between align-center">
+          <span class="d-flex align-center">
+            <v-icon color="primary" class="mr-2">mdi-email-send</v-icon>
+            Enviar Medición por Email
+          </span>
+          <v-btn icon="mdi-close" variant="text" color="white" :disabled="sendingEmail" @click="emailDialog = false"></v-btn>
+        </v-card-title>
+        
+        <v-card-text class="pa-6">
+          <v-form ref="emailForm" v-model="emailFormValid">
+            <p class="text-body-2 text-grey-lighten-1 mb-4">
+              Se generará un documento PDF estructurado de esta medición y se enviará un correo con el enlace de descarga del PDF y de todos los planos/archivos adjuntos.
+            </p>
+            <v-text-field
+              v-model="targetEmail"
+              label="Correo Electrónico de Destino *"
+              variant="outlined"
+              density="comfortable"
+              :rules="[v => !!v || 'El correo es obligatorio', v => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(v) || 'Correo no válido']"
+              color="primary"
+              prepend-inner-icon="mdi-email"
+              :disabled="sendingEmail"
+              hide-details="auto"
+              class="mb-1"
+            ></v-text-field>
+            
+            <div v-if="emailStatusMessage" class="mt-4 text-center">
+              <v-progress-circular v-if="sendingEmail" indeterminate color="primary" size="24" class="mr-2"></v-progress-circular>
+              <span class="text-body-2 font-weight-bold" :class="emailStatusMessage.startsWith('Error') ? 'text-error' : 'text-primary'">
+                {{ emailStatusMessage }}
+              </span>
+            </div>
+          </v-form>
+        </v-card-text>
+        
+        <v-card-actions class="pa-4 bg-surface-variant justify-end gap-2">
+          <v-btn variant="text" color="white" :disabled="sendingEmail" @click="emailDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="flat" class="font-weight-bold" :loading="sendingEmail" :disabled="!emailFormValid" @click="submitSendEmail">
+            Enviar Informe
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -1121,6 +1180,7 @@ import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProjectStore } from '../store/projectStore';
 import SketchCanvas from '../components/SketchCanvas.vue';
 import FileUploader from '../components/FileUploader.vue';
+import { generateProjectPDF, uploadPDFToStorage, sendSummaryEmail } from '../services/emailService';
 
 export default {
   name: 'EditorProyecto',
@@ -1149,6 +1209,14 @@ export default {
     const addFormValid = ref(false);
     const newFormType = ref('cocina');
     const newFormName = ref('');
+
+    // Diálogo de Email
+    const emailDialog = ref(false);
+    const emailForm = ref(null);
+    const emailFormValid = ref(false);
+    const targetEmail = ref('');
+    const sendingEmail = ref(false);
+    const emailStatusMessage = ref('');
 
     // Estado del panel lateral colapsable (se inicia según el ancho del viewport)
     const showSidebar = ref(true);
@@ -1577,6 +1645,53 @@ export default {
       }
     };
 
+    const openSendEmailDialog = () => {
+      if (project.value) {
+        targetEmail.value = project.value.email || '';
+        emailDialog.value = true;
+        emailStatusMessage.value = '';
+        if (emailForm.value) {
+          emailForm.value.resetValidation();
+        }
+      }
+    };
+
+    const submitSendEmail = async () => {
+      if (emailForm.value && project.value) {
+        const { valid } = await emailForm.value.validate();
+        if (valid) {
+          sendingEmail.value = true;
+          emailStatusMessage.value = 'Generando PDF del resumen...';
+          try {
+            // A. Forzar el guardado de cualquier cambio pendiente local antes de generar el PDF
+            await forceSaveFormImmediately();
+
+            // B. Generar el blob del PDF
+            const pdfBlob = await generateProjectPDF(project.value);
+            
+            // C. Subir a storage
+            emailStatusMessage.value = 'Subiendo PDF a Firebase Storage...';
+            const pdfUrl = await uploadPDFToStorage(projectId, project.value.cliente, pdfBlob);
+            
+            // D. Enviar correo
+            emailStatusMessage.value = 'Enviando email de resumen...';
+            await sendSummaryEmail(targetEmail.value, project.value, pdfUrl);
+            
+            emailStatusMessage.value = '¡Email enviado correctamente!';
+            setTimeout(() => {
+              emailDialog.value = false;
+              sendingEmail.value = false;
+              emailStatusMessage.value = '';
+            }, 1500);
+          } catch (err) {
+            console.error('Error al enviar email:', err);
+            emailStatusMessage.value = 'Error al enviar: ' + err.message;
+            sendingEmail.value = false;
+          }
+        }
+      }
+    };
+
     return {
       project,
       selectedFormId,
@@ -1610,6 +1725,14 @@ export default {
       getStatusColor,
       getStatusText,
       toggleProjectStatus,
+      emailDialog,
+      emailForm,
+      emailFormValid,
+      targetEmail,
+      sendingEmail,
+      emailStatusMessage,
+      openSendEmailDialog,
+      submitSendEmail,
     };
   },
 };
