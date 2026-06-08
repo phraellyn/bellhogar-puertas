@@ -495,6 +495,11 @@ export default {
       });
     });
 
+    const clearFilters = () => {
+      searchQuery.value = '';
+      statusFilter.value = '';
+    };
+
     // Colores para el chip del estado del proyecto
     const getStatusColor = (status) => {
       switch (status) {
