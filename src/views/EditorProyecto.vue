@@ -244,7 +244,7 @@
         <div class="d-flex align-center gap-2">
           <!-- Botón Enviar Ficha por Email -->
           <v-btn
-            prepend-icon="mdi-email-send"
+            prepend-icon="mdi-email"
             color="primary"
             variant="flat"
             size="small"
@@ -1130,7 +1130,7 @@
       <v-card color="surface" class="border-golden">
         <v-card-title class="text-h5 font-weight-bold text-white pa-4 bg-secondary border-b d-flex justify-space-between align-center">
           <span class="d-flex align-center">
-            <v-icon color="primary" class="mr-2">mdi-email-send</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-email</v-icon>
             Enviar Medición por Email
           </span>
           <v-btn icon="mdi-close" variant="text" color="white" :disabled="sendingEmail" @click="emailDialog = false"></v-btn>

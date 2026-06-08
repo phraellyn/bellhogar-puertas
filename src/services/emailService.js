@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { storage } from './firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -58,7 +58,7 @@ export const generateProjectPDF = async (project) => {
   doc.text('INFORME DE MEDICIÓN', 15, 35);
 
   // General Metadata Section
-  doc.autoTable({
+  autoTable(doc, {
     startY: 42,
     head: [[{ content: 'DATOS GENERALES DEL CLIENTE Y PROYECTO', colSpan: 4, styles: { halign: 'left', fillColor: [16, 16, 8], textColor: [255, 255, 255] } }]],
     body: [
@@ -163,7 +163,7 @@ export const generateProjectPDF = async (project) => {
         if (datos.fregadero) appRows.push(['FREGADERO', fmtOpt(datos.fregadero), '', datos.fregadero.observaciones || '']);
         if (datos.grifo) appRows.push(['GRIFO', fmtOpt(datos.grifo), '', datos.grifo.observaciones || '']);
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Elemento', 'Opciones', 'Medidas / Detalles', 'Observaciones']],
           body: appRows,
@@ -193,7 +193,7 @@ export const generateProjectPDF = async (project) => {
           ['Instalación agua/calefacc.:', (datos.preguntas?.instalacionAgua || '') + (datos.preguntas?.instalacionAgua === 'Otros' ? `: ${datos.preguntas.instalacionAguaOtros}` : ''), 'Altura muebles sup.:', (datos.preguntas?.alturaMueblesSuperiores || '') + (datos.preguntas?.alturaMueblesSuperiores === 'Otros' ? `: ${datos.preguntas.alturaMueblesOtros}` : '')]
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           body: faqBody,
           theme: 'grid',
@@ -215,7 +215,7 @@ export const generateProjectPDF = async (project) => {
           ['Cerco premarcos:', `Estándar: ${datos.cerco.estandar ? 'SÍ' : 'NO'} | Hidrófugo: ${datos.cerco.hidrofugo ? 'SÍ' : 'NO'} | Nudillo: ${datos.cerco.nudillo ? 'SÍ' : 'NO'} | Junta Goma: ${datos.cerco.juntaGoma ? 'SÍ' : 'NO'} | Descejado: ${datos.cerco.descejado ? 'SÍ' : 'NO'}`.trim(), '', '']
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           body: techBody,
           theme: 'grid',
@@ -242,7 +242,7 @@ export const generateProjectPDF = async (project) => {
           l.cantidad || '', l.apertura || '', l.medida || '', l.tipo || '', l.zona || '', l.cerco || '', l.observaciones || ''
         ]);
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Cant.', 'Apertura', 'Medida', 'Tipo', 'Zona', 'Cerco', 'Observaciones']],
           body: lineasBody,
@@ -261,7 +261,7 @@ export const generateProjectPDF = async (project) => {
           ['Colocación sobre:', `${datos.preparacionSuelo?.colocacionSobre || ''} ${datos.preparacionSuelo?.colocacionSobreOtros ? `(${datos.preparacionSuelo.colocacionSobreOtros})` : ''}`.trim(), '', '']
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           body: techBody,
           theme: 'grid',
@@ -288,7 +288,7 @@ export const generateProjectPDF = async (project) => {
           l.zona || '', l.medida || '', l.m2 || '', l.observaciones || ''
         ]);
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: currentY,
           head: [['Zona', 'Medidas suelos', 'm²', 'Observaciones']],
           body: lineasBody,

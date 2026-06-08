@@ -166,7 +166,7 @@
               </div>
               <div @click.stop class="d-flex align-center">
                 <v-btn
-                  icon="mdi-email-send"
+                  icon="mdi-email"
                   size="small"
                   color="primary"
                   variant="text"
@@ -378,7 +378,7 @@
       <v-card color="surface" class="border-golden">
         <v-card-title class="text-h5 font-weight-bold text-white pa-4 bg-secondary border-b-golden d-flex align-center justify-space-between">
           <span class="d-flex align-center">
-            <v-icon color="primary" class="mr-2">mdi-email-send</v-icon>
+            <v-icon color="primary" class="mr-2">mdi-email</v-icon>
             Enviar Medición por Email
           </span>
           <v-btn icon="mdi-close" variant="text" color="white" :disabled="sendingEmail" @click="emailDialog = false"></v-btn>
