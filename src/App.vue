@@ -22,7 +22,7 @@
         class="mr-2 font-weight-bold"
         @click="$router.push('/')"
       >
-        Volver
+        Mediciones
       </v-btn>
 
       <!-- Selector de Tema (Sol / Luna) -->

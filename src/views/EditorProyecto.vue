@@ -771,7 +771,7 @@
                     <td><v-text-field v-model="linea.zona" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td><v-text-field v-model="linea.cerco" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
-                    <td class="text-center">
+                    <td class="text-right">
                       <v-btn
                         v-if="idx < selectedForm.datos.lineasPuertas.length - 1"
                         icon="mdi-delete"
@@ -1010,7 +1010,7 @@
                       ></v-text-field>
                     </td>
                     <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
-                    <td class="text-center">
+                    <td class="text-right">
                       <v-btn
                         v-if="idx < selectedForm.datos.lineasTarima.length - 1"
                         icon="mdi-delete"

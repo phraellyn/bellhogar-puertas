@@ -12,7 +12,7 @@
         </p>
       </div>
 
-      <!-- Botón Nuevo Proyecto -->
+      <!-- Botón Añadir Medición -->
       <v-btn
         prepend-icon="mdi-plus"
         color="primary"
@@ -22,7 +22,7 @@
         @click="openCreateDialog"
         style="margin-top: 4px;"
       >
-        Nuevo Proyecto
+        Añadir Medición
       </v-btn>
     </v-col>
 
@@ -90,10 +90,10 @@
     <!-- Lista de Proyectos Vacía -->
     <v-col v-else-if="filteredProjects.length === 0" cols="12" class="text-center py-12">
       <v-icon size="96" color="grey-darken-2">mdi-folder-open-outline</v-icon>
-      <div class="text-h5 text-grey-lighten-1 mt-4 font-weight-bold">No se encontraron proyectos</div>
-      <p class="text-grey-lighten-2 mt-2">Prueba a limpiar tus filtros o crea un nuevo proyecto</p>
+      <div class="text-h5 text-grey-lighten-1 mt-4 font-weight-bold">No se encontraron mediciones</div>
+      <p class="text-grey-lighten-2 mt-2">Prueba a limpiar tus filtros o crea una nueva medición</p>
       <v-btn color="primary" class="mt-6" @click="openCreateDialog">
-        Crear Primer Proyecto
+        Crear Primera Medición
       </v-btn>
     </v-col>
 
