@@ -169,7 +169,7 @@ export const useProjectStore = defineStore('project', {
       let baseDatos = {};
       if (formType === 'cocina') {
         baseDatos = {
-          iluminacion: "", encimera: "", cubretuboMelaminico: "", observacionesGenerales: "",
+          iluminacion: "", encimera: "", cubretuboMelaminico: { ancho: "", alto: "", fondo: "" }, observacionesGenerales: "",
           campana: {
             presupuestar: false, propiedadCliente: false, techo: false, pared: false, isla: false,
             integrada: false, telescopica: false, filtroCarbon: false,
@@ -491,6 +491,15 @@ function normalizeProject(proj) {
         form.datos.lineasPuertas = [
           { id: 'l-p-1', cantidad: '', apertura: '', medida: '', tipo: '', zona: '', cerco: '', observaciones: '' }
         ];
+      }
+    } else if (form.tipo === 'cocina') {
+      if (typeof form.datos.cubretuboMelaminico !== 'object' || form.datos.cubretuboMelaminico === null) {
+        form.datos.cubretuboMelaminico = { ancho: "", alto: "", fondo: "" };
+      } else {
+        form.datos.cubretuboMelaminico = {
+          ancho: "", alto: "", fondo: "",
+          ...form.datos.cubretuboMelaminico
+        };
       }
     }
     return form;

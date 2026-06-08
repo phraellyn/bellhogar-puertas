@@ -294,25 +294,26 @@
           <!-- Formularios según Tipo -->
           <!-- FORMULARIO COCINAS -->
           <div v-if="selectedForm.tipo === 'cocina'">
-            <!-- Sección General -->
-            <v-card color="secondary" variant="flat" class="pa-4 mb-4" rounded="lg">
-              <v-row>
-                <v-col cols="12" sm="4" class="py-1">
-                  <v-text-field v-model="selectedForm.datos.iluminacion" label="ILUMINACIÓN" variant="outlined" density="compact" hide-details></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="4" class="py-1">
-                  <v-text-field v-model="selectedForm.datos.encimera" label="ENCIMERA" variant="outlined" density="compact" hide-details></v-text-field>
-                </v-col>
-                <v-col cols="12" sm="4" class="py-1">
-                  <v-text-field v-model="selectedForm.datos.cubretuboMelaminico" label="Cubretubo melamínico" variant="outlined" density="compact" hide-details></v-text-field>
-                </v-col>
-              </v-row>
-            </v-card>
-
             <!-- Sección Electrodomésticos y Complementos -->
             <h3 class="text-subtitle-2 font-weight-bold text-primary mb-3 text-uppercase">Electrodomésticos y Complementos</h3>
             <v-expansion-panels variant="accordion" class="border-golden mb-4">
-              <!-- 1. CAMPANA -->
+              <!-- 1. ILUMINACIÓN -->
+              <v-expansion-panel bg-color="surface">
+                <v-expansion-panel-title class="font-weight-bold">ILUMINACIÓN</v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <v-textarea v-model="selectedForm.datos.iluminacion" label="Detalle de Iluminación" variant="outlined" density="compact" rows="2" hide-details></v-textarea>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+
+              <!-- 2. ENCIMERA -->
+              <v-expansion-panel bg-color="surface">
+                <v-expansion-panel-title class="font-weight-bold">ENCIMERA</v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <v-textarea v-model="selectedForm.datos.encimera" label="Detalle de Encimera" variant="outlined" density="compact" rows="2" hide-details></v-textarea>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+
+              <!-- 3. CAMPANA -->
               <v-expansion-panel bg-color="surface">
                 <v-expansion-panel-title class="font-weight-bold">CAMPANA EXTRACTORA</v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -333,6 +334,23 @@
                     <v-col cols="12" sm="3" class="py-1"><v-text-field v-model="selectedForm.datos.campana.diametroSalida" label="Diám. Salida (mm)" variant="outlined" density="compact" hide-details></v-text-field></v-col>
                     <v-col cols="12" sm="3" class="py-1"><v-text-field v-model="selectedForm.datos.campana.otras" label="Otras" variant="outlined" density="compact" hide-details></v-text-field></v-col>
                   </v-row>
+                  
+                  <!-- Cubretubo melamínico -->
+                  <v-row class="mt-2 align-center">
+                    <v-col cols="12" sm="3" class="py-1">
+                      <span class="text-body-2 text-grey-lighten-1">Cubretubo melamínico:</span>
+                    </v-col>
+                    <v-col cols="4" sm="3" class="py-1">
+                      <v-text-field v-model="selectedForm.datos.cubretuboMelaminico.ancho" label="Ancho" variant="outlined" density="compact" hide-details></v-text-field>
+                    </v-col>
+                    <v-col cols="4" sm="3" class="py-1">
+                      <v-text-field v-model="selectedForm.datos.cubretuboMelaminico.alto" label="Alto" variant="outlined" density="compact" hide-details></v-text-field>
+                    </v-col>
+                    <v-col cols="4" sm="3" class="py-1">
+                      <v-text-field v-model="selectedForm.datos.cubretuboMelaminico.fondo" label="Fondo" variant="outlined" density="compact" hide-details></v-text-field>
+                    </v-col>
+                  </v-row>
+
                   <v-textarea v-model="selectedForm.datos.campana.observaciones" label="Observaciones Campana" variant="outlined" density="compact" class="mt-3" rows="2" hide-details></v-textarea>
                 </v-expansion-panel-text>
               </v-expansion-panel>
@@ -746,13 +764,13 @@
                 </thead>
                 <tbody>
                   <tr v-for="(linea, idx) in selectedForm.datos.lineasPuertas" :key="linea.id || idx">
-                    <td><v-text-field v-model="linea.cantidad" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.apertura" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.medida" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.tipo" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.zona" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.cerco" variant="outlined" density="compact" hide-details></v-text-field></td>
-                    <td><v-text-field v-model="linea.observaciones" variant="outlined" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.cantidad" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.apertura" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.medida" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.tipo" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.zona" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.cerco" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td class="text-center">
                       <v-btn
                         v-if="idx < selectedForm.datos.lineasPuertas.length - 1"
@@ -970,12 +988,13 @@
                 </thead>
                 <tbody>
                   <tr v-for="(linea, idx) in selectedForm.datos.lineasTarima" :key="linea.id || idx">
-                    <td><v-text-field v-model="linea.zona" variant="outlined" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.zona" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td>
                       <v-text-field 
                         v-model="linea.medida" 
                         placeholder="4.20 * 3.50" 
-                        variant="outlined" 
+                        class="table-input"
+                        variant="plain" 
                         density="compact" 
                         hide-details
                         @input="onMedidaTarimaInput(linea)"
@@ -984,12 +1003,13 @@
                     <td>
                       <v-text-field 
                         v-model="linea.m2" 
-                        variant="outlined" 
+                        class="table-input"
+                        variant="plain" 
                         density="compact" 
                         hide-details
                       ></v-text-field>
                     </td>
-                    <td><v-text-field v-model="linea.observaciones" variant="outlined" density="compact" hide-details></v-text-field></td>
+                    <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td class="text-center">
                       <v-btn
                         v-if="idx < selectedForm.datos.lineasTarima.length - 1"
@@ -1738,5 +1758,44 @@ export default {
 :deep(.labeled-checkbox-group .v-checkbox) {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
+}
+
+/* Zebra striping for technical tables (alternate row backgrounds) */
+.table-technical tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.01) !important;
+}
+.table-technical tbody tr:nth-child(odd) {
+  background-color: rgba(226, 192, 96, 0.03) !important;
+}
+
+.v-theme--light .table-technical tbody tr:nth-child(even) {
+  background-color: #ffffff !important;
+}
+.v-theme--light .table-technical tbody tr:nth-child(odd) {
+  background-color: #f7f5ef !important; /* Elegant off-white/cream */
+}
+
+/* Compact padding for inputs inside technical tables */
+.table-technical td {
+  padding: 4px 6px !important;
+}
+
+/* Text fields inside the dynamic table without borders and margin 0 */
+:deep(.table-input) {
+  margin: 0 !important;
+}
+
+:deep(.table-input .v-field) {
+  --v-field-padding-start: 4px !important;
+  --v-field-padding-end: 4px !important;
+  --v-field-input-padding-top: 4px !important;
+  --v-field-input-padding-bottom: 4px !important;
+  font-size: 11px !important; /* ~70% of standard 16px font-size */
+  margin: 0 !important;
+  border: none !important;
+}
+
+:deep(.table-input .v-field__outline) {
+  display: none !important; /* Completely hides the borders/outlines */
 }
 </style>

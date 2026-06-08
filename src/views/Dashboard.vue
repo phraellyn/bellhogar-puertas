@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-h4 font-weight-bold text-white d-flex align-center" style="line-height: 1.2;">
           <v-icon color="primary" class="mr-2" size="36">mdi-view-dashboard</v-icon>
-          Proyectos
+          Mediciones
         </h1>
         <p class="text-subtitle-1 text-grey-lighten-1 mt-1">
           Gestiona los datos de mediciones y clientes de la empresa
