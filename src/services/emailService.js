@@ -4,7 +4,7 @@ import { storage } from './firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // EmailJS Keys provided by the user
-const EMAILJS_PUBLIC_KEY = 'x-gAQNY6-pyOkdnd_yUg0';
+const EMAILJS_PUBLIC_KEY = 'ePuq7ToVavxXwByF2';
 const EMAILJS_SERVICE_ID = 'service_0dq6cik';
 const EMAILJS_TEMPLATE_ID = 'template_1asqc2u';
 
