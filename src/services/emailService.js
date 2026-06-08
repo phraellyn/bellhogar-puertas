@@ -9,10 +9,11 @@ const EMAILJS_SERVICE_ID = 'service_0dq6cik';
 const EMAILJS_TEMPLATE_ID = 'template_1asqc2u';
 
 /**
- * Loads an image from a URL and converts it to a Base64 PNG string.
+ * Loads an image from a URL and converts it to a Base64 string.
+ * Supports compressing via JPEG format and quality parameters.
  * Uses CORS-anonymous requests to prevent canvas tainting with Firebase Storage URLs.
  */
-const loadImageAsBase64 = (url) => {
+const loadImageAsBase64 = (url, format = 'png', quality = 1.0) => {
   return new Promise((resolve) => {
     if (!url) return resolve(null);
     const img = new Image();
@@ -23,8 +24,16 @@ const loadImageAsBase64 = (url) => {
         canvas.width = this.width;
         canvas.height = this.height;
         const ctx = canvas.getContext('2d');
+        
+        if (format === 'jpeg') {
+          // Fill white background to prevent transparent areas from turning black in JPEG
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
         ctx.drawImage(img, 0, 0);
-        const dataURL = canvas.toDataURL('image/png');
+        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const dataURL = canvas.toDataURL(mimeType, quality);
         resolve(dataURL);
       } catch (err) {
         console.error("CORS / Security error loading image for PDF:", err);
@@ -322,7 +331,7 @@ export const generateProjectPDF = async (project) => {
         if (form.dibujos.anotacionesUrl) dUrls.push({ title: 'Anotaciones / Croquis', url: form.dibujos.anotacionesUrl });
 
         for (const item of dUrls) {
-          const base64Img = await loadImageAsBase64(item.url);
+          const base64Img = await loadImageAsBase64(item.url, 'jpeg', 0.75);
           if (base64Img) {
             currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : currentY + 8;
             if (currentY > 185) {
@@ -333,7 +342,7 @@ export const generateProjectPDF = async (project) => {
             doc.setFontSize(9);
             doc.text(`${item.title}:`, 15, currentY);
             // Size: 100mm width, 75mm height fits perfectly on A4
-            doc.addImage(base64Img, 'PNG', 15, currentY + 3, 100, 75);
+            doc.addImage(base64Img, 'JPEG', 15, currentY + 3, 100, 75);
             doc.lastAutoTable = { finalY: currentY + 3 + 75 };
           }
         }
@@ -389,27 +398,34 @@ export const uploadPDFToStorage = async (projectId, clientName, pdfBlob) => {
  * Triggers the EmailJS REST API to send the notification with the links.
  */
 export const sendSummaryEmail = async (toEmail, project, pdfUrl) => {
-  // Format attachment links for the body text
-  let linksText = '';
+  // Format attachment links for the body as HTML list
+  let linksHtml = '<ul style="margin: 0; padding-left: 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333333;">';
+  let hasAttachments = false;
   if (project.formularios && project.formularios.length > 0) {
     project.formularios.forEach(f => {
-      linksText += `\nFicha: ${f.nombre} (${f.tipo})\n`;
+      let formLinks = '';
       if (f.dibujos?.bocetoUrl) {
-        linksText += `  - Boceto de Plano: ${f.dibujos.bocetoUrl}\n`;
+        formLinks += `<li><a href="${f.dibujos.bocetoUrl}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">Ver Boceto de Plano</a></li>`;
       }
       if (f.dibujos?.anotacionesUrl) {
-        linksText += `  - Anotaciones / Croquis: ${f.dibujos.anotacionesUrl}\n`;
+        formLinks += `<li><a href="${f.dibujos.anotacionesUrl}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">Ver Anotaciones / Croquis</a></li>`;
       }
       if (f.archivos && f.archivos.length > 0) {
-        linksText += `  - Archivos Adjuntos:\n`;
+        formLinks += `<li style="margin-top: 5px;"><strong>Archivos adjuntos:</strong><ul style="padding-left: 15px; margin-top: 5px; list-style-type: circle;">`;
         f.archivos.forEach(a => {
-          linksText += `    * ${a.nombre}: ${a.url}\n`;
+          formLinks += `<li><a href="${a.url}" target="_blank" style="color: #666666; text-decoration: underline;">${a.nombre}</a></li>`;
         });
+        formLinks += `</ul></li>`;
+      }
+      if (formLinks) {
+        linksHtml += `<li style="margin-bottom: 12px;"><strong>Ficha: ${f.nombre}</strong> (${f.tipo.toUpperCase()})<ul style="padding-left: 15px; margin-top: 5px; list-style-type: square;">${formLinks}</ul></li>`;
+        hasAttachments = true;
       }
     });
   }
-  if (!linksText) {
-    linksText = 'No se encontraron fotos o archivos adjuntos en el proyecto.';
+  linksHtml += '</ul>';
+  if (!hasAttachments) {
+    linksHtml = '<p style="font-family: Arial, sans-serif; font-size: 14px; color: #777777; margin: 0;">No se encontraron planos ni archivos adjuntos en esta medición.</p>';
   }
 
   // Setup template params
@@ -420,7 +436,7 @@ export const sendSummaryEmail = async (toEmail, project, pdfUrl) => {
     vendedor: project.vendedor || 'Técnico BellHogar',
     vendedor_email: project.email || 'carlosanchezcatala@gmail.com',
     pdf_link: pdfUrl,
-    adjuntos_links: linksText
+    adjuntos_links: linksHtml
   };
 
   const payload = {
