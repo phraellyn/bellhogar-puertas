@@ -752,14 +752,14 @@
               <table class="w-100 table-technical">
                 <thead>
                   <tr>
-                    <th style="width: 8%;">Cantidad</th>
-                    <th style="width: 8%;">Apertura</th>
-                    <th style="width: 8%;">Medida</th>
-                    <th style="width: 16%;">Tipo</th>
-                    <th style="width: 16%;">Zona</th>
-                    <th style="width: 8%;">Cerco</th>
-                    <th style="width: 32%;">Observaciones</th>
-                    <th style="width: 4%;"></th>
+                    <th style="width: 8.33%;">Cantidad</th>
+                    <th style="width: 8.33%;">Apertura</th>
+                    <th style="width: 8.33%;">Medida</th>
+                    <th style="width: 8.33%;">Tipo</th>
+                    <th style="width: 8.33%;">Zona</th>
+                    <th style="width: 8.33%;">Cerco</th>
+                    <th style="width: 41.67%;">Observaciones</th>
+                    <th style="width: 8.33%;"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -979,11 +979,11 @@
               <table class="w-100 table-technical">
                 <thead>
                   <tr>
-                    <th style="width: 17%;">Zona</th>
-                    <th style="width: 33%;">Medidas suelos</th>
-                    <th style="width: 17%;">m²</th>
-                    <th style="width: 28%;">Observaciones</th>
-                    <th style="width: 5%;"></th>
+                    <th style="width: 8.33%;">Zona</th>
+                    <th style="width: 16.67%;">Medidas suelos</th>
+                    <th style="width: 8.33%;">m²</th>
+                    <th style="width: 58.33%;">Observaciones</th>
+                    <th style="width: 8.33%;"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1790,7 +1790,7 @@ export default {
   --v-field-padding-end: 4px !important;
   --v-field-input-padding-top: 4px !important;
   --v-field-input-padding-bottom: 4px !important;
-  font-size: 11px !important; /* ~70% of standard 16px font-size */
+  font-size: 13px !important; /* ~120% of previous 11px font-size */
   margin: 0 !important;
   border: none !important;
 }
