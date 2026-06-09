@@ -1046,51 +1046,60 @@
         <v-window-item value="notes" :eager="true" class="fill-height pa-1">
           <div class="d-flex flex-column h-100 fill-height">
             <!-- Barra de Dibujo y Navegación Unificada -->
-            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 bg-surface-variant border-golden rounded-lg mb-2 flex-wrap gap-3">
+            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 drawing-toolbar border-golden rounded-lg mb-2 flex-wrap gap-3">
               <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
               <div class="d-flex align-center flex-wrap gap-2">
-                <v-btn-toggle
-                  v-model="activeTool"
-                  mandatory
-                  color="primary"
-                  density="compact"
-                  selected-class="bg-primary text-white"
-                  class="border border-golden rounded mr-2"
-                >
-                  <v-btn value="draw" icon="mdi-pencil" size="small" title="Herramienta Lápiz"></v-btn>
-                  <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
-                </v-btn-toggle>
+                <v-btn
+                  :variant="activeTool === 'draw' ? 'flat' : 'outlined'"
+                  :color="activeTool === 'draw' ? 'primary' : 'white'"
+                  icon="mdi-pencil"
+                  size="small"
+                  class="mr-2"
+                  :class="{ 'border-golden': activeTool !== 'draw' }"
+                  @click="activeTool = 'draw'"
+                  title="Herramienta Lápiz"
+                ></v-btn>
+                <v-btn
+                  :variant="activeTool === 'erase' ? 'flat' : 'outlined'"
+                  :color="activeTool === 'erase' ? 'primary' : 'white'"
+                  icon="mdi-eraser"
+                  size="small"
+                  class="mr-3"
+                  :class="{ 'border-golden': activeTool !== 'erase' }"
+                  @click="activeTool = 'erase'"
+                  title="Herramienta Borrador"
+                ></v-btn>
 
                 <div class="d-flex align-center mr-2">
-                  <span class="text-caption text-grey font-weight-bold mr-2">Grosor:</span>
                   <v-btn-toggle
                     v-model="brushSize"
                     mandatory
                     color="primary"
                     density="compact"
                     selected-class="bg-primary text-white"
-                    class="border border-golden rounded"
+                    class="border border-golden"
+                    rounded="pill"
                   >
-                    <v-btn :value="3" min-width="32" class="px-2" title="Fino">
+                    <v-btn :value="3" min-width="32" class="px-2" title="Fino" rounded="pill">
                       <div class="brush-size-dot" style="width: 4px; height: 4px;"></div>
                     </v-btn>
-                    <v-btn :value="7" min-width="32" class="px-2" title="Medio">
+                    <v-btn :value="7" min-width="32" class="px-2" title="Medio" rounded="pill">
                       <div class="brush-size-dot" style="width: 8px; height: 8px;"></div>
                     </v-btn>
-                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso">
+                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso" rounded="pill">
                       <div class="brush-size-dot" style="width: 14px; height: 14px;"></div>
                     </v-btn>
                   </v-btn-toggle>
                 </div>
 
-                <div class="d-flex align-center gap-2 mx-3">
+                <div class="colors-container">
                   <button
                     v-for="c in colors"
                     :key="c.value"
                     class="color-dot-small"
                     :style="{
                       backgroundColor: c.value,
-                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid #ffffff' : '1px solid rgba(255,255,255,0.3)'
+                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid var(--active-color-border)' : '1px solid var(--inactive-color-border)'
                     }"
                     @click="selectColor(c.value)"
                     :title="c.label"
@@ -1131,12 +1140,12 @@
                   title="Página anterior"
                 ></v-btn>
 
-                <span class="text-body-2 font-weight-bold text-white px-1">
+                <span class="text-body-2 font-weight-bold toolbar-text px-1">
                   <template v-if="isTwoPageLayout">
-                    Págs. {{ notesLeftPageIndex + 1 }} - {{ Math.min(notesRightPageIndex + 1, notesTotalPages) }} de {{ notesTotalPages }}
+                    {{ notesLeftPageIndex + 1 }}-{{ Math.min(notesRightPageIndex + 1, notesTotalPages) }}/{{ notesTotalPages }}
                   </template>
                   <template v-else>
-                    Pág. {{ notesLeftPageIndex + 1 }} de {{ notesTotalPages }}
+                    {{ notesLeftPageIndex + 1 }}/{{ notesTotalPages }}
                   </template>
                 </span>
 
@@ -1256,51 +1265,60 @@
         <v-window-item value="sketch" :eager="true" class="fill-height pa-1">
           <div class="d-flex flex-column h-100 fill-height">
             <!-- Barra de Dibujo y Navegación Unificada -->
-            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 bg-surface-variant border-golden rounded-lg mb-2 flex-wrap gap-3">
+            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 drawing-toolbar border-golden rounded-lg mb-2 flex-wrap gap-3">
               <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
               <div class="d-flex align-center flex-wrap gap-2">
-                <v-btn-toggle
-                  v-model="activeTool"
-                  mandatory
-                  color="primary"
-                  density="compact"
-                  selected-class="bg-primary text-white"
-                  class="border border-golden rounded mr-2"
-                >
-                  <v-btn value="draw" icon="mdi-pencil" size="small" title="Herramienta Lápiz"></v-btn>
-                  <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
-                </v-btn-toggle>
+                <v-btn
+                  :variant="activeTool === 'draw' ? 'flat' : 'outlined'"
+                  :color="activeTool === 'draw' ? 'primary' : 'white'"
+                  icon="mdi-pencil"
+                  size="small"
+                  class="mr-2"
+                  :class="{ 'border-golden': activeTool !== 'draw' }"
+                  @click="activeTool = 'draw'"
+                  title="Herramienta Lápiz"
+                ></v-btn>
+                <v-btn
+                  :variant="activeTool === 'erase' ? 'flat' : 'outlined'"
+                  :color="activeTool === 'erase' ? 'primary' : 'white'"
+                  icon="mdi-eraser"
+                  size="small"
+                  class="mr-3"
+                  :class="{ 'border-golden': activeTool !== 'erase' }"
+                  @click="activeTool = 'erase'"
+                  title="Herramienta Borrador"
+                ></v-btn>
 
                 <div class="d-flex align-center mr-2">
-                  <span class="text-caption text-grey font-weight-bold mr-2">Grosor:</span>
                   <v-btn-toggle
                     v-model="brushSize"
                     mandatory
                     color="primary"
                     density="compact"
                     selected-class="bg-primary text-white"
-                    class="border border-golden rounded"
+                    class="border border-golden"
+                    rounded="pill"
                   >
-                    <v-btn :value="3" min-width="32" class="px-2" title="Fino">
+                    <v-btn :value="3" min-width="32" class="px-2" title="Fino" rounded="pill">
                       <div class="brush-size-dot" style="width: 4px; height: 4px;"></div>
                     </v-btn>
-                    <v-btn :value="7" min-width="32" class="px-2" title="Medio">
+                    <v-btn :value="7" min-width="32" class="px-2" title="Medio" rounded="pill">
                       <div class="brush-size-dot" style="width: 8px; height: 8px;"></div>
                     </v-btn>
-                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso">
+                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso" rounded="pill">
                       <div class="brush-size-dot" style="width: 14px; height: 14px;"></div>
                     </v-btn>
                   </v-btn-toggle>
                 </div>
 
-                <div class="d-flex align-center gap-2 mx-3">
+                <div class="colors-container">
                   <button
                     v-for="c in colors"
                     :key="c.value"
                     class="color-dot-small"
                     :style="{
                       backgroundColor: c.value,
-                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid #ffffff' : '1px solid rgba(255,255,255,0.3)'
+                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid var(--active-color-border)' : '1px solid var(--inactive-color-border)'
                     }"
                     @click="selectColor(c.value)"
                     :title="c.label"
@@ -1341,12 +1359,12 @@
                   title="Página anterior"
                 ></v-btn>
 
-                <span class="text-body-2 font-weight-bold text-white px-1">
+                 <span class="text-body-2 font-weight-bold toolbar-text px-1">
                   <template v-if="isTwoPageLayout">
-                    Págs. {{ sketchLeftPageIndex + 1 }} - {{ Math.min(sketchRightPageIndex + 1, sketchTotalPages) }} de {{ sketchTotalPages }}
+                    {{ sketchLeftPageIndex + 1 }}-{{ Math.min(sketchRightPageIndex + 1, sketchTotalPages) }}/{{ sketchTotalPages }}
                   </template>
                   <template v-else>
-                    Pág. {{ sketchLeftPageIndex + 1 }} de {{ sketchTotalPages }}
+                    {{ sketchLeftPageIndex + 1 }}/{{ sketchTotalPages }}
                   </template>
                 </span>
 
@@ -2592,6 +2610,47 @@ export default {
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+}
+
+.colors-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.drawing-toolbar {
+  background-color: rgba(30, 30, 27, 0.4) !important;
+  --active-color-border: #ffffff;
+  --inactive-color-border: rgba(255, 255, 255, 0.3);
+}
+
+.v-theme--light .drawing-toolbar {
+  background-color: #fcfbfa !important;
+  border: 1px solid rgba(226, 192, 96, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(226, 192, 96, 0.08) !important;
+  --active-color-border: #4a3e1d;
+  --inactive-color-border: rgba(74, 62, 29, 0.2);
+}
+
+/* Inactive outlined buttons inside toolbar in light mode */
+.v-theme--light .drawing-toolbar .border-golden {
+  color: #4a3e1d !important;
+  border-color: rgba(226, 192, 96, 0.4) !important;
+}
+
+/* Inactive text buttons (chevrons) in light mode */
+.v-theme--light .drawing-toolbar .v-btn--variant-text {
+  color: #4a3e1d !important;
+}
+
+/* Page text info in light mode */
+.toolbar-text {
+  color: #ffffff !important;
+}
+.v-theme--light .toolbar-text {
+  color: #4a3e1d !important;
 }
 .color-dot-small:hover {
   transform: scale(1.2);
