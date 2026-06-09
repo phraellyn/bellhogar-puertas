@@ -327,8 +327,30 @@ export const generateProjectPDF = async (project) => {
       // Render drawings (Sketches & Annotations) directly inside the PDF if they exist!
       if (form.dibujos) {
         const dUrls = [];
-        if (form.dibujos.bocetoUrl) dUrls.push({ title: 'Boceto de Plano', url: form.dibujos.bocetoUrl });
-        if (form.dibujos.anotacionesUrl) dUrls.push({ title: 'Anotaciones / Croquis', url: form.dibujos.anotacionesUrl });
+        
+        // Bocetos
+        if (form.dibujos.bocetoPages && form.dibujos.bocetoPages.length > 0) {
+          form.dibujos.bocetoPages.forEach((page, idx) => {
+            if (page.url) {
+              const pageTitle = form.dibujos.bocetoPages.length > 1 ? `Boceto de Plano (Pág. ${idx + 1})` : 'Boceto de Plano';
+              dUrls.push({ title: pageTitle, url: page.url });
+            }
+          });
+        } else if (form.dibujos.bocetoUrl) {
+          dUrls.push({ title: 'Boceto de Plano', url: form.dibujos.bocetoUrl });
+        }
+
+        // Anotaciones
+        if (form.dibujos.anotacionesPages && form.dibujos.anotacionesPages.length > 0) {
+          form.dibujos.anotacionesPages.forEach((page, idx) => {
+            if (page.url) {
+              const pageTitle = form.dibujos.anotacionesPages.length > 1 ? `Anotaciones / Croquis (Pág. ${idx + 1})` : 'Anotaciones / Croquis';
+              dUrls.push({ title: pageTitle, url: page.url });
+            }
+          });
+        } else if (form.dibujos.anotacionesUrl) {
+          dUrls.push({ title: 'Anotaciones / Croquis', url: form.dibujos.anotacionesUrl });
+        }
 
         for (const item of dUrls) {
           const base64Img = await loadImageAsBase64(item.url, 'jpeg', 0.75);
@@ -404,12 +426,31 @@ export const sendSummaryEmail = async (toEmail, project, pdfUrl) => {
   if (project.formularios && project.formularios.length > 0) {
     project.formularios.forEach(f => {
       let formLinks = '';
-      if (f.dibujos?.bocetoUrl) {
+      
+      // Bocetos
+      if (f.dibujos?.bocetoPages && f.dibujos.bocetoPages.length > 0) {
+        f.dibujos.bocetoPages.forEach((page, idx) => {
+          if (page.url) {
+            const pageTitle = f.dibujos.bocetoPages.length > 1 ? `Ver Boceto de Plano (Pág. ${idx + 1})` : 'Ver Boceto de Plano';
+            formLinks += `<li><a href="${page.url}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">${pageTitle}</a></li>`;
+          }
+        });
+      } else if (f.dibujos?.bocetoUrl) {
         formLinks += `<li><a href="${f.dibujos.bocetoUrl}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">Ver Boceto de Plano</a></li>`;
       }
-      if (f.dibujos?.anotacionesUrl) {
+
+      // Anotaciones
+      if (f.dibujos?.anotacionesPages && f.dibujos.anotacionesPages.length > 0) {
+        f.dibujos.anotacionesPages.forEach((page, idx) => {
+          if (page.url) {
+            const pageTitle = f.dibujos.anotacionesPages.length > 1 ? `Ver Anotaciones / Croquis (Pág. ${idx + 1})` : 'Ver Anotaciones / Croquis';
+            formLinks += `<li><a href="${page.url}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">${pageTitle}</a></li>`;
+          }
+        });
+      } else if (f.dibujos?.anotacionesUrl) {
         formLinks += `<li><a href="${f.dibujos.anotacionesUrl}" target="_blank" style="color: #e0c060; font-weight: bold; text-decoration: none;">Ver Anotaciones / Croquis</a></li>`;
       }
+
       if (f.archivos && f.archivos.length > 0) {
         formLinks += `<li style="margin-top: 5px;"><strong>Archivos adjuntos:</strong><ul style="padding-left: 15px; margin-top: 5px; list-style-type: circle;">`;
         f.archivos.forEach(a => {

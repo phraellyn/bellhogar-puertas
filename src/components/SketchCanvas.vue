@@ -1,145 +1,5 @@
 <template>
   <v-card color="surface" class="border-golden fill-height d-flex flex-column" rounded="lg">
-    <!-- Barra de Herramientas del Lienzo -->
-    <div class="pa-4 bg-surface-variant border-b d-flex flex-column" style="gap: 20px; flex-grow: 0; flex-shrink: 0;">
-      <!-- Línea 1: Herramientas principales y grosor -->
-      <div class="d-flex align-center justify-space-between flex-wrap" style="gap: 24px; width: 100%;">
-        <!-- Grupo Izquierda: Dibujo, Deshacer y Grosor -->
-        <div class="d-flex align-center flex-wrap" style="gap: 32px;">
-          <!-- Grupo: Acciones de dibujo -->
-          <div class="d-flex align-center" style="gap: 16px;">
-            <v-btn
-              :color="activeTool === 'draw' ? 'primary' : 'surface'"
-              variant="flat"
-              icon="mdi-pencil"
-              rounded="circle"
-              density="comfortable"
-              style="border: 1px solid rgba(226, 192, 96, 0.3);"
-              @click="activeTool = 'draw'"
-              title="Lápiz / Dibujar"
-            ></v-btn>
-            <v-btn
-              :color="activeTool === 'erase' ? 'primary' : 'surface'"
-              variant="flat"
-              icon="mdi-eraser"
-              rounded="circle"
-              density="comfortable"
-              style="border: 1px solid rgba(226, 192, 96, 0.3);"
-              @click="activeTool = 'erase'"
-              title="Goma de Borrar"
-            ></v-btn>
-
-            <v-divider vertical class="mx-1 opacity-15" style="height: 24px; align-self: center;"></v-divider>
-
-            <!-- Historial -->
-            <v-btn
-              icon="mdi-undo"
-              density="compact"
-              variant="text"
-              color="white"
-              :disabled="historyIndex <= 0"
-              @click="undo"
-              title="Deshacer trazo (Ctrl+Z)"
-              class="px-2"
-            ></v-btn>
-          </div>
-
-          <v-divider vertical class="mx-1 opacity-15" style="height: 24px; align-self: center;"></v-divider>
-
-          <!-- Grupo: Grosores -->
-          <v-btn-toggle v-model="brushSize" mandatory color="primary" density="compact">
-            <v-btn :value="2" class="px-3" title="Fino">2px</v-btn>
-            <v-btn :value="5" class="px-3" title="Medio">5px</v-btn>
-            <v-btn :value="10" class="px-3" title="Grueso">10px</v-btn>
-          </v-btn-toggle>
-        </div>
-
-        <!-- Al borde derecho: Borrar todo -->
-        <div class="d-flex align-center">
-          <v-btn
-            color="error"
-            prepend-icon="mdi-delete-sweep"
-            density="compact"
-            variant="flat"
-            class="px-4 font-weight-bold"
-            @click="confirmClear"
-            title="Borrar todo el dibujo y dejar el lienzo en blanco"
-          >
-            Borrar Todo
-          </v-btn>
-        </div>
-      </div>
-
-      <!-- Línea 2: Colores y Opciones adicionales (Empieza en Color) -->
-      <div class="d-flex align-center flex-wrap" style="gap: 32px; margin-top: 4px; width: 100%;">
-        <!-- Grupo: Colores -->
-        <div class="d-flex align-center" style="gap: 16px;">
-          <span class="text-caption text-grey font-weight-bold mr-1">Color:</span>
-          <div class="d-flex" style="gap: 16px;">
-            <button
-              v-for="c in colors"
-              :key="c.value"
-              class="color-dot"
-              :style="{ backgroundColor: c.value, border: brushColor === c.value ? '2px solid #fff' : '1px solid #444' }"
-              @click="selectColor(c.value)"
-              :title="c.label"
-            ></button>
-          </div>
-        </div>
-
-        <v-divider vertical class="mx-1 opacity-15" style="height: 24px; align-self: center;"></v-divider>
-
-        <!-- Grupo: Opciones adicionales (Rejilla) y Guardado -->
-        <div class="d-flex align-center" style="gap: 24px;">
-          <v-btn
-            :color="showGrid ? 'primary' : 'grey-lighten-1'"
-            variant="text"
-            density="compact"
-            :icon="showGrid ? 'mdi-grid' : 'mdi-grid-off'"
-            @click="toggleGrid"
-            title="Alternar cuadrícula de guía"
-            class="px-2"
-          ></v-btn>
-
-          <v-divider vertical class="mx-1 opacity-15" style="height: 24px; align-self: center;"></v-divider>
-
-          <!-- Indicador de Autoguardado -->
-          <div class="d-flex align-center">
-            <v-chip
-              v-if="saveStatus === 'saved'"
-              size="small"
-              color="success"
-              variant="text"
-              prepend-icon="mdi-cloud-check"
-              class="font-weight-bold px-1"
-            >
-              Guardado
-            </v-chip>
-            <v-chip
-              v-else-if="saveStatus === 'saving'"
-              size="small"
-              color="primary"
-              variant="text"
-              prepend-icon="mdi-sync"
-              class="font-weight-bold px-1 rotate-icon"
-            >
-              Guardando...
-            </v-chip>
-            <v-chip
-              v-else
-              size="small"
-              color="grey-lighten-1"
-              variant="text"
-              prepend-icon="mdi-cloud-upload-outline"
-              class="font-weight-bold px-1 animate-pulse"
-            >
-              Sin guardar
-            </v-chip>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Área del Lienzo -->
     <v-card-text class="pa-0 canvas-container flex-grow-1 position-relative">
       <!-- Wrapper centrado que mantiene el aspect ratio -->
@@ -158,7 +18,7 @@
           @touchend.prevent.stop
         ></canvas>
 
-        <!-- Capa de Cuadrícula de Plano (Opcional, sobre el canvas centrado) -->
+        <!-- Capa de Cuadrícula de Plano (Siempre Visible, sobre el canvas centrado) -->
         <div v-if="showGrid" class="grid-overlay" :class="{ 'grid-only-clear': canvasType === 'anotaciones' }"></div>
       </div>
 
@@ -201,39 +61,44 @@ export default {
     isActive: {
       type: Boolean,
       default: true
+    },
+    // ID de la página
+    pageId: {
+      type: String,
+      required: true
+    },
+    // Herramientas e hilos de dibujo compartidos desde el padre
+    activeTool: {
+      type: String,
+      default: 'draw'
+    },
+    brushSize: {
+      type: Number,
+      default: 5
+    },
+    brushColor: {
+      type: String,
+      default: '#101010'
     }
   },
-  emits: ['save'],
+  emits: ['save', 'focus'],
   setup(props, { emit }) {
     const canvas = ref(null);
     const context = ref(null);
     const isDrawing = ref(false);
     
-    // Herramientas y Estilos
-    const activeTool = ref('draw');
-    const brushSize = ref(5);
-    const brushColor = ref('#101010'); // Negro por defecto
-    const showGrid = ref(true); // Mostrar cuadrícula por defecto tanto en anotaciones como en boceto
+    // Cuadrícula siempre encendida
+    const showGrid = ref(true);
     
     const loadingImage = ref(false);
     
-    // Relación de aspecto bloqueada para evitar deformaciones entre dispositivos
-    let lockedAspectRatio = null; // width / height (CSS pixels)
+    // Relación de aspecto bloqueada permanente a formato A4 Vertical (210mm x 297mm)
+    let lockedAspectRatio = 210 / 297; // width / height
     
     // Estados de autoguardado premium
     const saveStatus = ref('saved'); // 'saved' | 'dirty' | 'saving'
     let autoSaveTimer = null;
     let currentSavePromise = null;
-
-    // Paleta de colores premium corporativos
-    const colors = [
-      { label: 'Negro', value: '#101010' },
-      { label: 'Azul', value: '#1976D2' },
-      { label: 'Verde', value: '#388E3C' },
-      { label: 'Rojo', value: '#D32F2F' },
-      { label: 'Gris claro', value: '#D0D0D0' },
-      { label: 'Gris oscuro', value: '#808080' }
-    ];
 
     // Historial para Undo (Deshacer)
     const history = ref([]);
@@ -243,15 +108,6 @@ export default {
     // Coordenadas del último trazo
     const lastX = ref(0);
     const lastY = ref(0);
-
-    const toggleGrid = () => {
-      showGrid.value = !showGrid.value;
-    };
-
-    const selectColor = (color) => {
-      brushColor.value = color;
-      activeTool.value = 'draw'; // Cambiar a lápiz si selecciona color
-    };
 
     // Inicializar el canvas y ajustar su resolución (preservando el aspect ratio bloqueado)
     const resizeCanvas = () => {
@@ -268,10 +124,7 @@ export default {
       // Si las dimensiones del contenedor son 0 (por estar oculto), abortamos.
       if (containerWidth === 0 || containerHeight === 0) return;
 
-      // Si no hay aspect ratio bloqueado, capturamos el actual como referencia
-      if (!lockedAspectRatio) {
-        lockedAspectRatio = containerWidth / containerHeight;
-      }
+
 
       // Calcular dimensiones que caben en el contenedor manteniendo el aspect ratio
       let targetWidth, targetHeight;
@@ -379,6 +232,7 @@ export default {
       canvas.value.setPointerCapture(e.pointerId);
 
       isDrawing.value = true;
+      emit('focus', props.pageId);
       const coords = getCoordinates(e);
       lastX.value = coords.x;
       lastY.value = coords.y;
@@ -396,12 +250,12 @@ export default {
       ctx.lineTo(coords.x, coords.y);
 
       // Configurar color y grosor según herramienta
-      if (activeTool.value === 'erase') {
+      if (props.activeTool === 'erase') {
         ctx.strokeStyle = '#ffffff'; // Color de borrador es blanco
-        ctx.lineWidth = brushSize.value * 2.5; // Goma más ancha
+        ctx.lineWidth = props.brushSize * 2.5; // Goma más ancha
       } else {
-        ctx.strokeStyle = brushColor.value;
-        ctx.lineWidth = brushSize.value;
+        ctx.strokeStyle = props.brushColor;
+        ctx.lineWidth = props.brushSize;
       }
 
       ctx.stroke();
@@ -463,12 +317,7 @@ export default {
       const cacheBustedUrl = url.startsWith('data:') ? url : `${url}${url.includes('?') ? '&' : '?'}_cb=${new Date().getTime()}`;
       img.src = cacheBustedUrl;
       img.onload = () => {
-        // Bloquear el aspect ratio a partir de la imagen original guardada
-        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-          lockedAspectRatio = img.naturalWidth / img.naturalHeight;
-          // Re-calcular dimensiones del canvas con el nuevo aspect ratio
-          resizeCanvas();
-        }
+        resizeCanvas();
 
         const ctx = context.value;
         const cvs = canvas.value;
@@ -518,6 +367,7 @@ export default {
               blob,
               canvasType: props.canvasType,
               formId: props.formId,
+              pageId: props.pageId,
               callback: (err) => {
                 currentSavePromise = null;
                 if (!err) {
@@ -587,16 +437,10 @@ export default {
 
     return {
       canvas,
-      activeTool,
-      brushSize,
-      brushColor,
       showGrid,
-      colors,
       loadingImage,
       saveStatus,
       historyIndex,
-      toggleGrid,
-      selectColor,
       confirmClear,
       startDrawing,
       draw,

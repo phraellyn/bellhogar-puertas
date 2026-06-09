@@ -253,7 +253,9 @@ export const useProjectStore = defineStore('project', {
         fechaCreacion: new Date().toISOString(),
         dibujos: {
           anotacionesUrl: null,
-          bocetoUrl: null
+          bocetoUrl: null,
+          anotacionesPages: [{ id: 'page-notes-' + Math.random().toString(36).substring(2, 9), url: null }],
+          bocetoPages: [{ id: 'page-sketch-' + Math.random().toString(36).substring(2, 9), url: null }]
         },
         archivos: [],
         datos: baseDatos
@@ -299,11 +301,24 @@ export const useProjectStore = defineStore('project', {
       // A. Borrar posibles archivos del Storage ligados a esta ficha
       const form = this.currentProject.formularios.find(f => f.id === formId);
       if (form) {
-        // Borrar boceto y notas
-        if (form.dibujos.anotacionesUrl) {
+        // Borrar todas las páginas de bocetos y anotaciones
+        if (form.dibujos.anotacionesPages) {
+          for (const page of form.dibujos.anotacionesPages) {
+            if (page.url) {
+              try { await deleteObject(ref(storage, `projects/${projectId}/sketches/${formId}_anotaciones_${page.id}.png`)); } catch (e) {}
+            }
+          }
+        } else if (form.dibujos.anotacionesUrl) {
           try { await deleteObject(ref(storage, `projects/${projectId}/sketches/${formId}_anotaciones.png`)); } catch (e) {}
         }
-        if (form.dibujos.bocetoUrl) {
+
+        if (form.dibujos.bocetoPages) {
+          for (const page of form.dibujos.bocetoPages) {
+            if (page.url) {
+              try { await deleteObject(ref(storage, `projects/${projectId}/sketches/${formId}_boceto_${page.id}.png`)); } catch (e) {}
+            }
+          }
+        } else if (form.dibujos.bocetoUrl) {
           try { await deleteObject(ref(storage, `projects/${projectId}/sketches/${formId}_boceto.png`)); } catch (e) {}
         }
         // Borrar archivos adjuntos subidos
@@ -325,10 +340,10 @@ export const useProjectStore = defineStore('project', {
     },
 
     // 9. Subir dibujo del Canvas a Storage
-    async saveCanvasDrawing(projectId, formId, canvasType, imageBlob) {
+    async saveCanvasDrawing(projectId, formId, canvasType, pageId, imageBlob) {
       if (!this.currentProject) return null;
 
-      const path = `projects/${projectId}/sketches/${formId}_${canvasType}.png`;
+      const path = `projects/${projectId}/sketches/${formId}_${canvasType}_${pageId}.png`;
       const storageRef = ref(storage, path);
       
       // Subir archivo PNG a Storage
@@ -339,8 +354,25 @@ export const useProjectStore = defineStore('project', {
       const updatedFormularios = this.currentProject.formularios.map(form => {
         if (form.id === formId) {
           const dibujos = { ...form.dibujos };
-          if (canvasType === 'anotaciones') dibujos.anotacionesUrl = downloadUrl;
-          if (canvasType === 'boceto') dibujos.bocetoUrl = downloadUrl;
+          const pagesKey = canvasType === 'anotaciones' ? 'anotacionesPages' : 'bocetoPages';
+          
+          if (!dibujos[pagesKey]) {
+            dibujos[pagesKey] = [{ id: pageId, url: downloadUrl }];
+          } else {
+            dibujos[pagesKey] = dibujos[pagesKey].map(page => {
+              if (page.id === pageId) {
+                return { ...page, url: downloadUrl };
+              }
+              return page;
+            });
+          }
+
+          // Sincronizar el campo legacy si esta es la primera página
+          if (dibujos[pagesKey][0] && dibujos[pagesKey][0].id === pageId) {
+            if (canvasType === 'anotaciones') dibujos.anotacionesUrl = downloadUrl;
+            if (canvasType === 'boceto') dibujos.bocetoUrl = downloadUrl;
+          }
+
           return { ...form, dibujos };
         }
         return form;
@@ -354,6 +386,83 @@ export const useProjectStore = defineStore('project', {
 
       this.currentProject.formularios = updatedFormularios;
       return downloadUrl;
+    },
+
+    // 9b. Añadir página a un canvas de dibujo
+    async addCanvasPage(projectId, formId, canvasType) {
+      if (!this.currentProject) return;
+      const newPageId = 'page-' + Math.random().toString(36).substring(2, 9);
+      
+      const updatedFormularios = this.currentProject.formularios.map(form => {
+        if (form.id === formId) {
+          const dibujos = { ...form.dibujos };
+          const pagesKey = canvasType === 'anotaciones' ? 'anotacionesPages' : 'bocetoPages';
+          if (!dibujos[pagesKey]) dibujos[pagesKey] = [];
+          dibujos[pagesKey] = [...dibujos[pagesKey], { id: newPageId, url: null }];
+          return { ...form, dibujos };
+        }
+        return form;
+      });
+
+      const docRef = doc(db, 'proyectos', projectId);
+      await updateDoc(docRef, {
+        formularios: updatedFormularios,
+        fechaModificacion: serverTimestamp()
+      });
+
+      this.currentProject.formularios = updatedFormularios;
+    },
+
+    // 9c. Eliminar página de un canvas de dibujo
+    async removeCanvasPage(projectId, formId, canvasType, pageId) {
+      if (!this.currentProject) return;
+      const form = this.currentProject.formularios.find(f => f.id === formId);
+      if (!form) return;
+
+      const pagesKey = canvasType === 'anotaciones' ? 'anotacionesPages' : 'bocetoPages';
+      const pages = form.dibujos[pagesKey] || [];
+      const pageToDelete = pages.find(p => p.id === pageId);
+
+      // Eliminar el archivo de Storage si existe URL
+      if (pageToDelete && pageToDelete.url) {
+        try {
+          const path = `projects/${projectId}/sketches/${formId}_${canvasType}_${pageId}.png`;
+          await deleteObject(ref(storage, path));
+        } catch (e) {
+          console.warn('No se pudo borrar el dibujo de Storage:', e);
+        }
+      }
+
+      const remainingPages = pages.filter(p => p.id !== pageId);
+      // Asegurar que quede al menos una página
+      if (remainingPages.length === 0) {
+        remainingPages.push({ id: 'page-' + Math.random().toString(36).substring(2, 9), url: null });
+      }
+
+      const updatedFormularios = this.currentProject.formularios.map(f => {
+        if (f.id === formId) {
+          const dibujos = { ...f.dibujos };
+          dibujos[pagesKey] = remainingPages;
+
+          // Sincronizar campo legacy de la primera página
+          if (canvasType === 'anotaciones') {
+            dibujos.anotacionesUrl = remainingPages[0]?.url || null;
+          } else {
+            dibujos.bocetoUrl = remainingPages[0]?.url || null;
+          }
+
+          return { ...f, dibujos };
+        }
+        return f;
+      });
+
+      const docRef = doc(db, 'proyectos', projectId);
+      await updateDoc(docRef, {
+        formularios: updatedFormularios,
+        fechaModificacion: serverTimestamp()
+      });
+
+      this.currentProject.formularios = updatedFormularios;
     },
 
     // 10. Subir archivo adjunto a Storage
@@ -447,6 +556,19 @@ function normalizeProject(proj) {
   }
   proj.formularios = proj.formularios.map(form => {
     if (!form.datos) form.datos = {};
+    if (!form.dibujos) {
+      form.dibujos = { anotacionesUrl: null, bocetoUrl: null };
+    }
+    if (!form.dibujos.anotacionesPages || !Array.isArray(form.dibujos.anotacionesPages)) {
+      form.dibujos.anotacionesPages = form.dibujos.anotacionesUrl
+        ? [{ id: 'page-init-notes', url: form.dibujos.anotacionesUrl }]
+        : [{ id: 'page-init-notes-' + Math.random().toString(36).substring(2, 9), url: null }];
+    }
+    if (!form.dibujos.bocetoPages || !Array.isArray(form.dibujos.bocetoPages)) {
+      form.dibujos.bocetoPages = form.dibujos.bocetoUrl
+        ? [{ id: 'page-init-sketch', url: form.dibujos.bocetoUrl }]
+        : [{ id: 'page-init-sketch-' + Math.random().toString(36).substring(2, 9), url: null }];
+    }
     if (form.tipo === 'tarimas') {
       form.datos.modeloTarima = { grosor: "", aislante: "", ...form.datos.modeloTarima };
       form.datos.rodapie = { modelo: "", color: "", alto: "", grosor: "", quitarRodapie: false, ...form.datos.rodapie };

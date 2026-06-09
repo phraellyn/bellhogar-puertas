@@ -5,20 +5,32 @@
       <!-- Ficha de Datos Comunes del Cliente (50% de ancho en Desktop/Tablet) -->
       <v-col cols="12" lg="6" class="pa-2 h-desktop-100 d-flex flex-column">
         <v-card color="surface" class="elevation-2 border-golden h-desktop-100 d-flex flex-column" rounded="lg">
-          <v-card-title class="pa-4 bg-secondary border-b d-flex justify-space-between align-center">
+          <v-card-title class="pa-4 bg-secondary border-b d-flex justify-space-between align-center flex-wrap gap-2">
             <span class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
               <v-icon color="primary" class="mr-2">mdi-account-box</v-icon>
               Datos Comunes del Proyecto
             </span>
-            <v-chip
-              size="small"
-              :color="getStatusColor(project.estado)"
-              class="font-weight-bold cursor-pointer"
-              @click="toggleProjectStatus"
-              title="Haz clic para cambiar de estado"
-            >
-              {{ getStatusText(project.estado) }}
-            </v-chip>
+            <div class="d-flex align-center gap-2">
+              <v-btn
+                prepend-icon="mdi-email"
+                color="primary"
+                variant="flat"
+                size="small"
+                class="font-weight-bold text-uppercase"
+                @click="openSendEmailDialog"
+              >
+                Enviar por Email
+              </v-btn>
+              <v-chip
+                size="small"
+                :color="getStatusColor(project.estado)"
+                class="font-weight-bold cursor-pointer"
+                @click="toggleProjectStatus"
+                title="Haz clic para cambiar de estado"
+              >
+                {{ getStatusText(project.estado) }}
+              </v-chip>
+            </div>
           </v-card-title>
           
           <v-card-text class="pa-4 overflow-y-auto">
@@ -242,18 +254,6 @@
         </div>
 
         <div class="d-flex align-center gap-2">
-          <!-- Botón Enviar Ficha por Email -->
-          <v-btn
-            prepend-icon="mdi-email"
-            color="primary"
-            variant="flat"
-            size="small"
-            class="font-weight-bold mr-2 text-uppercase"
-            @click="openSendEmailDialog"
-          >
-            Enviar por Email
-          </v-btn>
-          
           <!-- Sutil indicador de guardado automático del formulario técnico -->
           <v-chip
             v-if="formSaveStatus === 'saved'"
@@ -1042,30 +1042,412 @@
           </div>
         </v-window-item>
 
-        <!-- 2. PESTAÑA ANOTACIONES TÁCTILES (Lienzo al 100% de alto y ancho) -->
+        <!-- 2. PESTAÑA ANOTACIONES TÁCTILES -->
         <v-window-item value="notes" :eager="true" class="fill-height pa-1">
-          <sketch-canvas
-            ref="notesCanvasRef"
-            canvas-type="anotaciones"
-            :project-id="project.id"
-            :form-id="selectedForm.id"
-            :image-url="selectedForm.dibujos.anotacionesUrl"
-            :is-active="activeTab === 'notes'"
-            @save="onCanvasSave"
-          />
+          <div class="d-flex flex-column h-100 fill-height">
+            <!-- Barra de Dibujo y Navegación Unificada -->
+            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 bg-surface-variant border-golden rounded-lg mb-2 flex-wrap gap-3">
+              <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
+              <div class="d-flex align-center flex-wrap gap-2">
+                <v-btn-toggle
+                  v-model="activeTool"
+                  mandatory
+                  color="primary"
+                  density="compact"
+                  selected-class="bg-primary text-white"
+                  class="border border-golden rounded mr-2"
+                >
+                  <v-btn value="draw" icon="mdi-pencil" size="small" title="Herramienta Lápiz"></v-btn>
+                  <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
+                </v-btn-toggle>
+
+                <div class="d-flex align-center mr-3" style="min-width: 120px;">
+                  <span class="text-caption text-grey font-weight-bold mr-1">Grosor:</span>
+                  <v-slider
+                    v-model="brushSize"
+                    min="1"
+                    max="20"
+                    step="1"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    track-color="grey-darken-1"
+                    thumb-size="12"
+                  ></v-slider>
+                  <span class="text-caption text-white font-weight-bold ml-1" style="min-width: 16px; text-align: right;">{{ brushSize }}</span>
+                </div>
+
+                <div class="d-flex align-center gap-1">
+                  <button
+                    v-for="c in colors"
+                    :key="c.value"
+                    class="color-dot-small"
+                    :style="{
+                      backgroundColor: c.value,
+                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid #ffffff' : '1px solid rgba(255,255,255,0.3)'
+                    }"
+                    @click="selectColor(c.value)"
+                    :title="c.label"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Grupo de Acciones (Deshacer, Borrar) -->
+              <div class="d-flex align-center gap-2">
+                <v-btn
+                  icon="mdi-undo"
+                  size="small"
+                  variant="outlined"
+                  color="white"
+                  class="border-golden"
+                  @click="triggerNotesUndo"
+                  title="Deshacer (Ctrl+Z)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-delete-sweep"
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  @click="triggerNotesClear"
+                  title="Limpiar lienzo"
+                ></v-btn>
+              </div>
+
+              <!-- Grupo de Navegación de Páginas -->
+              <div class="d-flex align-center gap-2">
+                <v-btn
+                  icon="mdi-chevron-left"
+                  size="small"
+                  variant="text"
+                  color="white"
+                  :disabled="notesLeftPageIndex === 0"
+                  @click="prevNotesPage"
+                  title="Página anterior"
+                ></v-btn>
+
+                <span class="text-body-2 font-weight-bold text-white px-1">
+                  <template v-if="isTwoPageLayout">
+                    Págs. {{ notesLeftPageIndex + 1 }} - {{ Math.min(notesRightPageIndex + 1, notesTotalPages) }} de {{ notesTotalPages }}
+                  </template>
+                  <template v-else>
+                    Pág. {{ notesLeftPageIndex + 1 }} de {{ notesTotalPages }}
+                  </template>
+                </span>
+
+                <v-btn
+                  icon="mdi-chevron-right"
+                  size="small"
+                  variant="text"
+                  color="white"
+                  :disabled="notesRightPageIndex >= notesTotalPages"
+                  @click="nextNotesPage"
+                  title="Página siguiente"
+                ></v-btn>
+
+                <v-btn
+                  icon="mdi-plus-box"
+                  color="primary"
+                  size="small"
+                  variant="flat"
+                  @click="addNotesPage"
+                  title="Añadir página"
+                ></v-btn>
+
+                <v-btn
+                  icon="mdi-minus-box"
+                  color="error"
+                  size="small"
+                  variant="outlined"
+                  :disabled="notesTotalPages <= 1"
+                  @click="deleteActiveNotesPage"
+                  title="Borrar página activa (borde dorado)"
+                ></v-btn>
+              </div>
+            </div>
+
+            <!-- Área de Canvases -->
+            <div class="flex-grow-1 flex-shrink-1 d-flex gap-4 overflow-hidden" style="min-height: 0;">
+              <!-- Canvas Izquierda -->
+              <div v-if="notesLeftPage" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+                <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                  Página {{ notesLeftPageIndex + 1 }}
+                </div>
+                <sketch-canvas
+                  ref="notesCanvasLeftRef"
+                  :key="notesLeftPage.id"
+                  :page-id="notesLeftPage.id"
+                  canvas-type="anotaciones"
+                  :project-id="project.id"
+                  :form-id="selectedForm.id"
+                  :image-url="notesLeftPage.url"
+                  :is-active="activeTab === 'notes'"
+                  :active-tool="activeTool"
+                  :brush-size="brushSize"
+                  :brush-color="brushColor"
+                  @save="onCanvasSave"
+                  @focus="activeNotesPageId = $event"
+                  :style="{
+                    border: activeNotesPageId === notesLeftPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                    borderRadius: '8px'
+                  }"
+                />
+              </div>
+
+              <!-- Canvas Derecha (Solo en Two Page Layout) -->
+              <div v-if="isTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+                <template v-if="notesRightPage">
+                  <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                    Página {{ notesRightPageIndex + 1 }}
+                  </div>
+                  <sketch-canvas
+                    ref="notesCanvasRightRef"
+                    :key="notesRightPage.id"
+                    :page-id="notesRightPage.id"
+                    canvas-type="anotaciones"
+                    :project-id="project.id"
+                    :form-id="selectedForm.id"
+                    :image-url="notesRightPage.url"
+                    :is-active="activeTab === 'notes'"
+                    :active-tool="activeTool"
+                    :brush-size="brushSize"
+                    :brush-color="brushColor"
+                    @save="onCanvasSave"
+                    @focus="activeNotesPageId = $event"
+                    :style="{
+                      border: activeNotesPageId === notesRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                      borderRadius: '8px'
+                    }"
+                  />
+                </template>
+                <v-card
+                  v-else
+                  color="surface"
+                  class="border-golden fill-height d-flex flex-column align-center justify-center border-dashed text-center pa-6"
+                  style="border-style: dashed !important; flex: 1;"
+                  rounded="lg"
+                >
+                  <v-icon size="64" color="primary" class="mb-4">mdi-plus-circle-outline</v-icon>
+                  <div class="text-h6 text-white font-weight-bold mb-2">Añadir otra página</div>
+                  <p class="text-body-2 text-grey-lighten-1 mb-6 max-w-sm">
+                    Optimiza el espacio en pantalla horizontal mostrando dos páginas a la vez. Añade una nueva hoja para continuar dibujando.
+                  </p>
+                  <v-btn
+                    prepend-icon="mdi-plus"
+                    color="primary"
+                    variant="flat"
+                    class="font-weight-bold text-uppercase px-6"
+                    @click="addNotesPage"
+                  >
+                    Añadir Hoja
+                  </v-btn>
+                </v-card>
+              </div>
+            </div>
+          </div>
         </v-window-item>
 
-        <!-- 3. PESTAÑA CROQUIS / BOCETO PLANO (Lienzo al 100% de alto y ancho con rejilla) -->
+        <!-- 3. PESTAÑA CROQUIS / BOCETO PLANO -->
         <v-window-item value="sketch" :eager="true" class="fill-height pa-1">
-          <sketch-canvas
-            ref="sketchCanvasRef"
-            canvas-type="boceto"
-            :project-id="project.id"
-            :form-id="selectedForm.id"
-            :image-url="selectedForm.dibujos.bocetoUrl"
-            :is-active="activeTab === 'sketch'"
-            @save="onCanvasSave"
-          />
+          <div class="d-flex flex-column h-100 fill-height">
+            <!-- Barra de Dibujo y Navegación Unificada -->
+            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 bg-surface-variant border-golden rounded-lg mb-2 flex-wrap gap-3">
+              <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
+              <div class="d-flex align-center flex-wrap gap-2">
+                <v-btn-toggle
+                  v-model="activeTool"
+                  mandatory
+                  color="primary"
+                  density="compact"
+                  selected-class="bg-primary text-white"
+                  class="border border-golden rounded mr-2"
+                >
+                  <v-btn value="draw" icon="mdi-pencil" size="small" title="Herramienta Lápiz"></v-btn>
+                  <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
+                </v-btn-toggle>
+
+                <div class="d-flex align-center mr-3" style="min-width: 120px;">
+                  <span class="text-caption text-grey font-weight-bold mr-1">Grosor:</span>
+                  <v-slider
+                    v-model="brushSize"
+                    min="1"
+                    max="20"
+                    step="1"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    track-color="grey-darken-1"
+                    thumb-size="12"
+                  ></v-slider>
+                  <span class="text-caption text-white font-weight-bold ml-1" style="min-width: 16px; text-align: right;">{{ brushSize }}</span>
+                </div>
+
+                <div class="d-flex align-center gap-1">
+                  <button
+                    v-for="c in colors"
+                    :key="c.value"
+                    class="color-dot-small"
+                    :style="{
+                      backgroundColor: c.value,
+                      border: brushColor === c.value && activeTool === 'draw' ? '2.5px solid #ffffff' : '1px solid rgba(255,255,255,0.3)'
+                    }"
+                    @click="selectColor(c.value)"
+                    :title="c.label"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Grupo de Acciones (Deshacer, Borrar) -->
+              <div class="d-flex align-center gap-2">
+                <v-btn
+                  icon="mdi-undo"
+                  size="small"
+                  variant="outlined"
+                  color="white"
+                  class="border-golden"
+                  @click="triggerSketchUndo"
+                  title="Deshacer (Ctrl+Z)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-delete-sweep"
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  @click="triggerSketchClear"
+                  title="Limpiar lienzo"
+                ></v-btn>
+              </div>
+
+              <!-- Grupo de Navegación de Páginas -->
+              <div class="d-flex align-center gap-2">
+                <v-btn
+                  icon="mdi-chevron-left"
+                  size="small"
+                  variant="text"
+                  color="white"
+                  :disabled="sketchLeftPageIndex === 0"
+                  @click="prevSketchPage"
+                  title="Página anterior"
+                ></v-btn>
+
+                <span class="text-body-2 font-weight-bold text-white px-1">
+                  <template v-if="isTwoPageLayout">
+                    Págs. {{ sketchLeftPageIndex + 1 }} - {{ Math.min(sketchRightPageIndex + 1, sketchTotalPages) }} de {{ sketchTotalPages }}
+                  </template>
+                  <template v-else>
+                    Pág. {{ sketchLeftPageIndex + 1 }} de {{ sketchTotalPages }}
+                  </template>
+                </span>
+
+                <v-btn
+                  icon="mdi-chevron-right"
+                  size="small"
+                  variant="text"
+                  color="white"
+                  :disabled="sketchRightPageIndex >= sketchTotalPages"
+                  @click="nextSketchPage"
+                  title="Página siguiente"
+                ></v-btn>
+
+                <v-btn
+                  icon="mdi-plus-box"
+                  color="primary"
+                  size="small"
+                  variant="flat"
+                  @click="addSketchPage"
+                  title="Añadir página"
+                ></v-btn>
+
+                <v-btn
+                  icon="mdi-minus-box"
+                  color="error"
+                  size="small"
+                  variant="outlined"
+                  :disabled="sketchTotalPages <= 1"
+                  @click="deleteActiveSketchPage"
+                  title="Borrar página activa (borde dorado)"
+                ></v-btn>
+              </div>
+            </div>
+
+            <!-- Área de Canvases -->
+            <div class="flex-grow-1 flex-shrink-1 d-flex gap-4 overflow-hidden" style="min-height: 0;">
+              <!-- Canvas Izquierda -->
+              <div v-if="sketchLeftPage" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+                <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                  Página {{ sketchLeftPageIndex + 1 }}
+                </div>
+                <sketch-canvas
+                  ref="sketchCanvasLeftRef"
+                  :key="sketchLeftPage.id"
+                  :page-id="sketchLeftPage.id"
+                  canvas-type="boceto"
+                  :project-id="project.id"
+                  :form-id="selectedForm.id"
+                  :image-url="sketchLeftPage.url"
+                  :is-active="activeTab === 'sketch'"
+                  :active-tool="activeTool"
+                  :brush-size="brushSize"
+                  :brush-color="brushColor"
+                  @save="onCanvasSave"
+                  @focus="activeSketchPageId = $event"
+                  :style="{
+                    border: activeSketchPageId === sketchLeftPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                    borderRadius: '8px'
+                  }"
+                />
+              </div>
+
+              <!-- Canvas Derecha (Solo en Two Page Layout) -->
+              <div v-if="isTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+                <template v-if="sketchRightPage">
+                  <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                    Página {{ sketchRightPageIndex + 1 }}
+                  </div>
+                  <sketch-canvas
+                    ref="sketchCanvasRightRef"
+                    :key="sketchRightPage.id"
+                    :page-id="sketchRightPage.id"
+                    canvas-type="boceto"
+                    :project-id="project.id"
+                    :form-id="selectedForm.id"
+                    :image-url="sketchRightPage.url"
+                    :is-active="activeTab === 'sketch'"
+                    :active-tool="activeTool"
+                    :brush-size="brushSize"
+                    :brush-color="brushColor"
+                    @save="onCanvasSave"
+                    @focus="activeSketchPageId = $event"
+                    :style="{
+                      border: activeSketchPageId === sketchRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                      borderRadius: '8px'
+                    }"
+                  />
+                </template>
+                <v-card
+                  v-else
+                  color="surface"
+                  class="border-golden fill-height d-flex flex-column align-center justify-center border-dashed text-center pa-6"
+                  style="border-style: dashed !important; flex: 1;"
+                  rounded="lg"
+                >
+                  <v-icon size="64" color="primary" class="mb-4">mdi-plus-circle-outline</v-icon>
+                  <div class="text-h6 text-white font-weight-bold mb-2">Añadir otra página</div>
+                  <p class="text-body-2 text-grey-lighten-1 mb-6 max-w-sm">
+                    Optimiza el espacio en pantalla horizontal mostrando dos páginas a la vez. Añade una nueva hoja para continuar dibujando.
+                  </p>
+                  <v-btn
+                    prepend-icon="mdi-plus"
+                    color="primary"
+                    variant="flat"
+                    class="font-weight-bold text-uppercase px-6"
+                    @click="addSketchPage"
+                  >
+                    Añadir Hoja
+                  </v-btn>
+                </v-card>
+              </div>
+            </div>
+          </div>
         </v-window-item>
 
         <!-- 4. PESTAÑA ARCHIVOS (Fotos, videos y PDFs) -->
@@ -1175,7 +1557,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProjectStore } from '../store/projectStore';
 import SketchCanvas from '../components/SketchCanvas.vue';
@@ -1199,9 +1581,54 @@ export default {
     const selectedFormId = ref(null);
     const activeTab = ref('form');
 
-    // Referencias a los canvas
-    const notesCanvasRef = ref(null);
-    const sketchCanvasRef = ref(null);
+    // Referencias a los canvas (izquierda/derecha para dos páginas)
+    const notesCanvasLeftRef = ref(null);
+    const notesCanvasRightRef = ref(null);
+    const sketchCanvasLeftRef = ref(null);
+    const sketchCanvasRightRef = ref(null);
+
+    // Estados para tamaño de ventana y cálculo de diseño a dos páginas
+    const windowWidth = ref(window.innerWidth);
+    const windowHeight = ref(window.innerHeight);
+
+    const handleWindowResize = () => {
+      windowWidth.value = window.innerWidth;
+      windowHeight.value = window.innerHeight;
+    };
+
+    // Paginación de dibujos
+    const currentNotesPageIndex = ref(0);
+    const currentSketchPageIndex = ref(0);
+
+    const isTwoPageLayout = computed(() => {
+      const w = windowWidth.value;
+      const h = windowHeight.value;
+      // Dos páginas sólo si es landscape y el ancho es de tablet o superior (w >= 768)
+      return w >= 768 && w > h;
+    });
+
+    // Herramientas de Dibujo Compartidas
+    const activeTool = ref('draw'); // 'draw' | 'erase'
+    const brushSize = ref(5);
+    const brushColor = ref('#101010');
+    const colors = [
+      { label: 'Negro', value: '#101010' },
+      { label: 'Azul', value: '#1976D2' },
+      { label: 'Verde', value: '#388E3C' },
+      { label: 'Rojo', value: '#D32F2F' },
+      { label: 'Gris claro', value: '#D0D0D0' },
+      { label: 'Gris oscuro', value: '#808080' }
+    ];
+    const selectColor = (color) => {
+      brushColor.value = color;
+      activeTool.value = 'draw';
+    };
+
+    // Control de Foco de Página Activa
+    const activeNotesPageId = ref(null);
+    const activeSketchPageId = ref(null);
+
+
     
     // Control de Formularios y Modales
     const commonFormValid = ref(true);
@@ -1226,7 +1653,14 @@ export default {
       await projectStore.fetchProjectById(projectId);
       // Mantener selectedFormId en null al inicio para que se muestre el panel de control general (datos del cliente + estancias)
       selectedFormId.value = null;
+      window.addEventListener('resize', handleWindowResize);
     });
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', handleWindowResize);
+    });
+
+
 
     // Proyecto reactivo del store
     const project = computed(() => projectStore.currentProject);
@@ -1236,6 +1670,81 @@ export default {
       if (!project.value || !selectedFormId.value) return null;
       return project.value.formularios.find(f => f.id === selectedFormId.value);
     });
+
+    // Anotaciones
+    const notesPages = computed(() => selectedForm.value?.dibujos?.anotacionesPages || []);
+    const notesTotalPages = computed(() => notesPages.value.length);
+    const notesLeftPageIndex = computed(() => {
+      return isTwoPageLayout.value ? Math.floor(currentNotesPageIndex.value / 2) * 2 : currentNotesPageIndex.value;
+    });
+    const notesRightPageIndex = computed(() => notesLeftPageIndex.value + 1);
+    
+    const notesLeftPage = computed(() => notesPages.value[notesLeftPageIndex.value] || null);
+    const notesRightPage = computed(() => notesPages.value[notesRightPageIndex.value] || null);
+
+    // Bocetos
+    const sketchPages = computed(() => selectedForm.value?.dibujos?.bocetoPages || []);
+    const sketchTotalPages = computed(() => sketchPages.value.length);
+    const sketchLeftPageIndex = computed(() => {
+      return isTwoPageLayout.value ? Math.floor(currentSketchPageIndex.value / 2) * 2 : currentSketchPageIndex.value;
+    });
+    const sketchRightPageIndex = computed(() => sketchLeftPageIndex.value + 1);
+
+    const sketchLeftPage = computed(() => sketchPages.value[sketchLeftPageIndex.value] || null);
+    const sketchRightPage = computed(() => sketchPages.value[sketchRightPageIndex.value] || null);
+
+    // Controlar índices al borrar páginas
+    watch(notesTotalPages, (newTotal) => {
+      if (currentNotesPageIndex.value >= newTotal) {
+        currentNotesPageIndex.value = Math.max(0, newTotal - 1);
+      }
+    });
+    watch(sketchTotalPages, (newTotal) => {
+      if (currentSketchPageIndex.value >= newTotal) {
+        currentSketchPageIndex.value = Math.max(0, newTotal - 1);
+      }
+    });
+
+    // Sincronizar foco de página activa según listado y visibilidad
+    watch([notesLeftPage, notesRightPage, isTwoPageLayout, notesPages], ([left, right, twoPage, pages]) => {
+      if (!left) {
+        activeNotesPageId.value = null;
+        return;
+      }
+      if (!twoPage) {
+        // En vista de página única, la activa es siempre la única visible (la izquierda)
+        activeNotesPageId.value = left.id;
+      } else {
+        // En vista de dos páginas, si el foco actual no es ninguna de las dos visibles,
+        // por defecto enfocamos la izquierda.
+        const currentActiveIsValid = pages && pages.some(p => p.id === activeNotesPageId.value) &&
+                                     ((left && activeNotesPageId.value === left.id) || 
+                                      (right && activeNotesPageId.value === right.id));
+        if (!currentActiveIsValid) {
+          activeNotesPageId.value = left.id;
+        }
+      }
+    }, { deep: true, immediate: true });
+
+    watch([sketchLeftPage, sketchRightPage, isTwoPageLayout, sketchPages], ([left, right, twoPage, pages]) => {
+      if (!left) {
+        activeSketchPageId.value = null;
+        return;
+      }
+      if (!twoPage) {
+        // En vista de página única, la activa es siempre la única visible (la izquierda)
+        activeSketchPageId.value = left.id;
+      } else {
+        // En vista de dos páginas, si el foco actual no es ninguna de las dos visibles,
+        // por defecto enfocamos la izquierda.
+        const currentActiveIsValid = pages && pages.some(p => p.id === activeSketchPageId.value) &&
+                                     ((left && activeSketchPageId.value === left.id) || 
+                                      (right && activeSketchPageId.value === right.id));
+        if (!currentActiveIsValid) {
+          activeSketchPageId.value = left.id;
+        }
+      }
+    }, { deep: true, immediate: true });
 
     const selectForm = (formId) => {
       selectedFormId.value = formId;
@@ -1385,6 +1894,9 @@ export default {
       } else {
         lastSavedDatosJson = '';
       }
+      // Resetear índices de páginas al cambiar de ficha
+      currentNotesPageIndex.value = 0;
+      currentSketchPageIndex.value = 0;
     });
 
     // Auto-añadir fila vacía en puertas cuando la última fila deje de estar vacía
@@ -1533,13 +2045,108 @@ export default {
     });
 
     // 7. Recibir el evento para guardar canvas de Anotación o Croquis (Silencioso, sin alert)
-    const onCanvasSave = async ({ blob, canvasType, formId, callback }) => {
+    const onCanvasSave = async ({ blob, canvasType, formId, pageId, callback }) => {
       try {
-        await projectStore.saveCanvasDrawing(projectId, formId, canvasType, blob);
+        await projectStore.saveCanvasDrawing(projectId, formId, canvasType, pageId, blob);
         if (callback) callback(null);
       } catch (err) {
         console.error('Error al guardar dibujo de canvas:', err);
         if (callback) callback(err);
+      }
+    };
+
+    // Navegación y gestión de páginas
+    const prevNotesPage = async () => {
+      await forceSaveFormImmediately();
+      const step = isTwoPageLayout.value ? 2 : 1;
+      currentNotesPageIndex.value = Math.max(0, currentNotesPageIndex.value - step);
+    };
+
+    const nextNotesPage = async () => {
+      await forceSaveFormImmediately();
+      const step = isTwoPageLayout.value ? 2 : 1;
+      currentNotesPageIndex.value = Math.min(notesTotalPages.value - 1, currentNotesPageIndex.value + step);
+    };
+
+    const addNotesPage = async () => {
+      await forceSaveFormImmediately();
+      await projectStore.addCanvasPage(projectId, selectedFormId.value, 'anotaciones');
+      currentNotesPageIndex.value = notesTotalPages.value - 1;
+    };
+
+    const deleteNotesPage = async (pageId) => {
+      if (confirm('¿Estás seguro de que deseas eliminar permanentemente esta página de anotaciones?')) {
+        await forceSaveFormImmediately();
+        await projectStore.removeCanvasPage(projectId, selectedFormId.value, 'anotaciones', pageId);
+      }
+    };
+
+    const deleteActiveNotesPage = async () => {
+      if (activeNotesPageId.value) {
+        await deleteNotesPage(activeNotesPageId.value);
+      }
+    };
+
+    const triggerNotesUndo = () => {
+      if (activeNotesPageId.value === notesRightPage.value?.id && notesCanvasRightRef.value) {
+        notesCanvasRightRef.value.undo();
+      } else if (notesCanvasLeftRef.value) {
+        notesCanvasLeftRef.value.undo();
+      }
+    };
+
+    const triggerNotesClear = () => {
+      if (activeNotesPageId.value === notesRightPage.value?.id && notesCanvasRightRef.value) {
+        notesCanvasRightRef.value.confirmClear();
+      } else if (notesCanvasLeftRef.value) {
+        notesCanvasLeftRef.value.confirmClear();
+      }
+    };
+
+    const prevSketchPage = async () => {
+      await forceSaveFormImmediately();
+      const step = isTwoPageLayout.value ? 2 : 1;
+      currentSketchPageIndex.value = Math.max(0, currentSketchPageIndex.value - step);
+    };
+
+    const nextSketchPage = async () => {
+      await forceSaveFormImmediately();
+      const step = isTwoPageLayout.value ? 2 : 1;
+      currentSketchPageIndex.value = Math.min(sketchTotalPages.value - 1, currentSketchPageIndex.value + step);
+    };
+
+    const addSketchPage = async () => {
+      await forceSaveFormImmediately();
+      await projectStore.addCanvasPage(projectId, selectedFormId.value, 'boceto');
+      currentSketchPageIndex.value = sketchTotalPages.value - 1;
+    };
+
+    const deleteSketchPage = async (pageId) => {
+      if (confirm('¿Estás seguro de que deseas eliminar permanentemente esta página de boceto?')) {
+        await forceSaveFormImmediately();
+        await projectStore.removeCanvasPage(projectId, selectedFormId.value, 'boceto', pageId);
+      }
+    };
+
+    const deleteActiveSketchPage = async () => {
+      if (activeSketchPageId.value) {
+        await deleteSketchPage(activeSketchPageId.value);
+      }
+    };
+
+    const triggerSketchUndo = () => {
+      if (activeSketchPageId.value === sketchRightPage.value?.id && sketchCanvasRightRef.value) {
+        sketchCanvasRightRef.value.undo();
+      } else if (sketchCanvasLeftRef.value) {
+        sketchCanvasLeftRef.value.undo();
+      }
+    };
+
+    const triggerSketchClear = () => {
+      if (activeSketchPageId.value === sketchRightPage.value?.id && sketchCanvasRightRef.value) {
+        sketchCanvasRightRef.value.confirmClear();
+      } else if (sketchCanvasLeftRef.value) {
+        sketchCanvasLeftRef.value.confirmClear();
       }
     };
 
@@ -1594,11 +2201,17 @@ export default {
 
       // C. Guardar dibujos del canvas si están pendientes (dirty)
       const promises = [];
-      if (notesCanvasRef.value) {
-        promises.push(notesCanvasRef.value.saveDrawing());
+      if (notesCanvasLeftRef.value) {
+        promises.push(notesCanvasLeftRef.value.saveDrawing());
       }
-      if (sketchCanvasRef.value) {
-        promises.push(sketchCanvasRef.value.saveDrawing());
+      if (notesCanvasRightRef.value) {
+        promises.push(notesCanvasRightRef.value.saveDrawing());
+      }
+      if (sketchCanvasLeftRef.value) {
+        promises.push(sketchCanvasLeftRef.value.saveDrawing());
+      }
+      if (sketchCanvasRightRef.value) {
+        promises.push(sketchCanvasRightRef.value.saveDrawing());
       }
       if (promises.length > 0) {
         await Promise.all(promises);
@@ -1719,8 +2332,46 @@ export default {
       onMedidaTarimaInput,
       totalM2Computed,
       onCanvasSave,
-      notesCanvasRef,
-      sketchCanvasRef,
+      notesCanvasLeftRef,
+      notesCanvasRightRef,
+      sketchCanvasLeftRef,
+      sketchCanvasRightRef,
+      isTwoPageLayout,
+      currentNotesPageIndex,
+      notesPages,
+      notesTotalPages,
+      notesLeftPageIndex,
+      notesRightPageIndex,
+      notesLeftPage,
+      notesRightPage,
+      currentSketchPageIndex,
+      sketchPages,
+      sketchTotalPages,
+      sketchLeftPageIndex,
+      sketchRightPageIndex,
+      sketchLeftPage,
+      sketchRightPage,
+      prevNotesPage,
+      nextNotesPage,
+      addNotesPage,
+      deleteNotesPage,
+      deleteActiveNotesPage,
+      triggerNotesUndo,
+      triggerNotesClear,
+      prevSketchPage,
+      nextSketchPage,
+      addSketchPage,
+      deleteSketchPage,
+      deleteActiveSketchPage,
+      triggerSketchUndo,
+      triggerSketchClear,
+      activeTool,
+      brushSize,
+      brushColor,
+      colors,
+      selectColor,
+      activeNotesPageId,
+      activeSketchPageId,
       goBackToProject,
       getStatusColor,
       getStatusText,
@@ -1920,5 +2571,17 @@ export default {
 
 :deep(.table-input .v-field__outline) {
   display: none !important; /* Completely hides the borders/outlines */
+}
+
+.color-dot-small {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+.color-dot-small:hover {
+  transform: scale(1.2);
 }
 </style>
