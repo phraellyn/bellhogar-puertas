@@ -1061,23 +1061,29 @@
                   <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
                 </v-btn-toggle>
 
-                <div class="d-flex align-center mr-3" style="min-width: 120px;">
-                  <span class="text-caption text-grey font-weight-bold mr-1">Grosor:</span>
-                  <v-slider
+                <div class="d-flex align-center mr-2">
+                  <span class="text-caption text-grey font-weight-bold mr-2">Grosor:</span>
+                  <v-btn-toggle
                     v-model="brushSize"
-                    min="1"
-                    max="20"
-                    step="1"
-                    density="compact"
-                    hide-details
+                    mandatory
                     color="primary"
-                    track-color="grey-darken-1"
-                    thumb-size="12"
-                  ></v-slider>
-                  <span class="text-caption text-white font-weight-bold ml-1" style="min-width: 16px; text-align: right;">{{ brushSize }}</span>
+                    density="compact"
+                    selected-class="bg-primary text-white"
+                    class="border border-golden rounded"
+                  >
+                    <v-btn :value="3" min-width="32" class="px-2" title="Fino">
+                      <div class="brush-size-dot" style="width: 4px; height: 4px;"></div>
+                    </v-btn>
+                    <v-btn :value="7" min-width="32" class="px-2" title="Medio">
+                      <div class="brush-size-dot" style="width: 8px; height: 8px;"></div>
+                    </v-btn>
+                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso">
+                      <div class="brush-size-dot" style="width: 14px; height: 14px;"></div>
+                    </v-btn>
+                  </v-btn-toggle>
                 </div>
 
-                <div class="d-flex align-center gap-1">
+                <div class="d-flex align-center gap-2 mx-3">
                   <button
                     v-for="c in colors"
                     :key="c.value"
@@ -1265,23 +1271,29 @@
                   <v-btn value="erase" icon="mdi-eraser" size="small" title="Herramienta Borrador"></v-btn>
                 </v-btn-toggle>
 
-                <div class="d-flex align-center mr-3" style="min-width: 120px;">
-                  <span class="text-caption text-grey font-weight-bold mr-1">Grosor:</span>
-                  <v-slider
+                <div class="d-flex align-center mr-2">
+                  <span class="text-caption text-grey font-weight-bold mr-2">Grosor:</span>
+                  <v-btn-toggle
                     v-model="brushSize"
-                    min="1"
-                    max="20"
-                    step="1"
-                    density="compact"
-                    hide-details
+                    mandatory
                     color="primary"
-                    track-color="grey-darken-1"
-                    thumb-size="12"
-                  ></v-slider>
-                  <span class="text-caption text-white font-weight-bold ml-1" style="min-width: 16px; text-align: right;">{{ brushSize }}</span>
+                    density="compact"
+                    selected-class="bg-primary text-white"
+                    class="border border-golden rounded"
+                  >
+                    <v-btn :value="3" min-width="32" class="px-2" title="Fino">
+                      <div class="brush-size-dot" style="width: 4px; height: 4px;"></div>
+                    </v-btn>
+                    <v-btn :value="7" min-width="32" class="px-2" title="Medio">
+                      <div class="brush-size-dot" style="width: 8px; height: 8px;"></div>
+                    </v-btn>
+                    <v-btn :value="12" min-width="32" class="px-2" title="Grueso">
+                      <div class="brush-size-dot" style="width: 14px; height: 14px;"></div>
+                    </v-btn>
+                  </v-btn-toggle>
                 </div>
 
-                <div class="d-flex align-center gap-1">
+                <div class="d-flex align-center gap-2 mx-3">
                   <button
                     v-for="c in colors"
                     :key="c.value"
@@ -1609,7 +1621,7 @@ export default {
 
     // Herramientas de Dibujo Compartidas
     const activeTool = ref('draw'); // 'draw' | 'erase'
-    const brushSize = ref(5);
+    const brushSize = ref(7);
     const brushColor = ref('#101010');
     const colors = [
       { label: 'Negro', value: '#101010' },
@@ -2583,5 +2595,12 @@ export default {
 }
 .color-dot-small:hover {
   transform: scale(1.2);
+}
+
+.brush-size-dot {
+  background-color: currentColor;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.15s ease;
 }
 </style>
