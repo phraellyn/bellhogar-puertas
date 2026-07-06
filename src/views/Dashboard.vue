@@ -153,7 +153,9 @@
               </div>
               <div class="d-flex align-center">
                 <v-icon size="18" color="primary" class="mr-2">mdi-store</v-icon>
-                <span class="text-body-2 text-grey-lighten-1">{{ project.tienda || 'No asignada' }}</span>
+                <span class="text-body-2 text-grey-lighten-1">
+                  {{ project.vendedor && project.tienda ? `${project.vendedor} / ${project.tienda}` : (project.vendedor || project.tienda || 'No asignada') }}
+                </span>
               </div>
             </v-card-text>
 
@@ -290,26 +292,28 @@
                 ></v-text-field>
               </v-col>
               <v-col cols="12" sm="6" class="py-1">
-                <v-text-field
+                <v-select
                   v-model="newProjectData.vendedor"
                   label="Vendedor / Técnico *"
+                  :items="vendedores"
                   variant="outlined"
                   density="comfortable"
                   :rules="[v => !!v || 'El vendedor es obligatorio']"
                   color="primary"
                   prepend-inner-icon="mdi-account-tie"
-                ></v-text-field>
+                ></v-select>
               </v-col>
               <v-col cols="12" sm="6" class="py-1">
-                <v-text-field
+                <v-select
                   v-model="newProjectData.tienda"
                   label="Tienda / Delegación *"
+                  :items="tiendas"
                   variant="outlined"
                   density="comfortable"
                   :rules="[v => !!v || 'La tienda es obligatoria']"
                   color="primary"
                   prepend-inner-icon="mdi-store"
-                ></v-text-field>
+                ></v-select>
               </v-col>
               <v-col cols="12" class="py-1">
                 <v-radio-group
@@ -476,7 +480,11 @@ export default {
     // Cargar proyectos al montar el componente
     onMounted(() => {
       projectStore.fetchProjects();
+      projectStore.fetchConfig();
     });
+
+    const tiendas = computed(() => projectStore.config?.tiendas || []);
+    const vendedores = computed(() => projectStore.config?.vendedores || []);
 
     // Proyectos filtrados de forma reactiva
     const filteredProjects = computed(() => {
@@ -681,6 +689,8 @@ export default {
       emailStatusMessage,
       openSendEmailDialog,
       submitSendEmail,
+      tiendas,
+      vendedores,
     };
   },
 };

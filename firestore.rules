@@ -4,5 +4,8 @@ service cloud.firestore {
     match /proyectos/{project} {
       allow read, write: if true; // Permitir lectura y escritura general para agilizar trabajo local/tablet
     }
+    match /configuracion/{configDoc} {
+      allow read, write: if true;
+    }
   }
 }

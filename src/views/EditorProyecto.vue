@@ -88,26 +88,28 @@
               ></v-text-field>
               <v-row class="ma-0">
                 <v-col cols="6" class="pa-0 pr-1">
-                  <v-text-field
+                  <v-select
                     v-model="project.vendedor"
                     label="Vendedor"
+                    :items="vendedoresOptions"
                     variant="outlined"
                     density="compact"
                     hide-details="auto"
                     class="mb-3"
-                    @input="saveCommonData"
-                  ></v-text-field>
+                    @update:modelValue="saveCommonData"
+                  ></v-select>
                 </v-col>
                 <v-col cols="6" class="pa-0 pl-1">
-                  <v-text-field
+                  <v-select
                     v-model="project.tienda"
                     label="Tienda"
+                    :items="tiendasOptions"
                     variant="outlined"
                     density="compact"
                     hide-details="auto"
                     class="mb-3"
-                    @input="saveCommonData"
-                  ></v-text-field>
+                    @update:modelValue="saveCommonData"
+                  ></v-select>
                 </v-col>
               </v-row>
               <v-row class="ma-0">
@@ -309,14 +311,6 @@
             <!-- Sección Electrodomésticos y Complementos -->
             <h3 class="text-subtitle-2 font-weight-bold text-primary mb-3 text-uppercase">Electrodomésticos y Complementos</h3>
             <v-expansion-panels variant="accordion" class="border-golden mb-4">
-              <!-- 1. ILUMINACIÓN -->
-              <v-expansion-panel bg-color="surface">
-                <v-expansion-panel-title class="font-weight-bold">ILUMINACIÓN</v-expansion-panel-title>
-                <v-expansion-panel-text>
-                  <v-textarea v-model="selectedForm.datos.iluminacion" label="Detalle de Iluminación" variant="outlined" density="compact" rows="2" hide-details></v-textarea>
-                </v-expansion-panel-text>
-              </v-expansion-panel>
-
               <!-- 2. ENCIMERA -->
               <v-expansion-panel bg-color="surface">
                 <v-expansion-panel-title class="font-weight-bold">ENCIMERA</v-expansion-panel-title>
@@ -391,7 +385,6 @@
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.presupuestar" label="Presupuestar" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.propiedadCliente" label="Propiedad cliente" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.ancho60" label="Ancho 60" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.ancho45" label="Ancho 45" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.libre" label="Libre instalación" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.lavadora.integrado" label="Integrado" density="compact" hide-details></v-checkbox></v-col>
                   </v-row>
@@ -439,9 +432,6 @@
                   <v-row>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.presupuestar" label="Presupuestar" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.propiedadCliente" label="Propiedad cliente" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.vapor" label="Vapor" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.pirolitico" label="Piro" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.multifuncion" label="Multi" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.bajoPlaca" label="Bajo placa" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.horno.columna" label="En columna" density="compact" hide-details></v-checkbox></v-col>
                   </v-row>
@@ -465,13 +455,15 @@
                 </v-expansion-panel-text>
               </v-expansion-panel>
 
-              <!-- 8. PLACA -->
               <v-expansion-panel bg-color="surface">
-                <v-expansion-panel-title class="font-weight-bold">PLACA DE COCCIÓN</v-expansion-panel-title>
+                <v-expansion-panel-title class="font-weight-bold">PLACA</v-expansion-panel-title>
                 <v-expansion-panel-text>
                   <v-row>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.presupuestar" label="Presupuestar" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.propiedadCliente" label="Propiedad cliente" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.ancho30" label="Ancho 30" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.ancho60" label="Ancho 60" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.ancho90" label="Ancho 90" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.induccion" label="Inducción" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.radiante" label="Radiante" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.placa.gas" label="Gas" density="compact" hide-details></v-checkbox></v-col>
@@ -491,8 +483,10 @@
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.presupuestar" label="Presupuestar" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.propiedadCliente" label="Propiedad cliente" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.bajoEncimera" label="Bajo encimera" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.opticaEnrasada" label="Óptica enrasada" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.opticaEnrasada" label="Enrasado" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.sobreEncimera" label="Sobre encimera" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.unSeno" label="Un seno" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.fregadero.dosSenos" label="Dos senos" density="compact" hide-details></v-checkbox></v-col>
                   </v-row>
                   <v-text-field v-model="selectedForm.datos.fregadero.observaciones" label="Observaciones Fregadero" variant="outlined" density="compact" class="mt-3" hide-details></v-text-field>
                 </v-expansion-panel-text>
@@ -505,6 +499,10 @@
                   <v-row>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.grifo.presupuestar" label="Presupuestar" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.grifo.propiedadCliente" label="Propiedad cliente" density="compact" hide-details></v-checkbox></v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.grifo.enEncimera" label="En encimera" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.grifo.enPared" label="En pared" density="compact" hide-details></v-checkbox></v-col>
                   </v-row>
                   <v-text-field v-model="selectedForm.datos.grifo.observaciones" label="Observaciones Grifo" variant="outlined" density="compact" class="mt-3" hide-details></v-text-field>
                 </v-expansion-panel-text>
@@ -525,12 +523,6 @@
                 <v-col cols="12" class="py-1 d-flex align-center gap-3">
                   <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Hay que demoler el mobiliario de cocina existente?</span>
                   <v-checkbox v-model="selectedForm.datos.preguntas.demolerMobiliario" density="compact" hide-details></v-checkbox>
-                </v-col>
-
-                <!-- 3. Horno y microondas en columna -->
-                <v-col cols="12" class="py-1 d-flex align-center gap-3">
-                  <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Quieren el horno y microondas en columna?</span>
-                  <v-checkbox v-model="selectedForm.datos.preguntas.hornoMicroColumna" density="compact" hide-details></v-checkbox>
                 </v-col>
 
                 <!-- 4. Desean comer en la cocina (con opciones inline) -->
@@ -896,8 +888,8 @@
 
               <v-divider class="my-3 opacity-15"></v-divider>
 
-              <!-- 4. BISAGRAS (Floor Prep / Services - named BISAGRAS per PDF) -->
-              <h3 class="text-subtitle-2 font-weight-bold text-primary mb-2 text-uppercase">BISAGRAS</h3>
+              <!-- 4. EXTRAS (Floor Prep / Services) -->
+              <h3 class="text-subtitle-2 font-weight-bold text-primary mb-2 text-uppercase">EXTRAS</h3>
               
               <v-row class="mb-3">
                 <!-- Desmontaje suelo existente -->
@@ -975,11 +967,12 @@
               </v-row>
             </v-card>
 
-            <!-- Tabla de Suelos (Cálculo automático de M2) -->
+            <!-- Tabla de Suelos (Cálculo automático de M2 y ML) -->
             <div class="d-flex align-center justify-space-between mb-3 mt-4">
-              <div>
-                <h3 class="text-subtitle-2 font-weight-bold text-primary text-uppercase d-inline">Medidas de Suelos</h3>
-                <v-chip class="ml-2 font-weight-bold" color="primary" size="small">Total: {{ totalM2Computed }} M²</v-chip>
+              <div class="d-flex align-center flex-wrap gap-2">
+                <h3 class="text-subtitle-2 font-weight-bold text-primary text-uppercase">Medidas de Suelos</h3>
+                <v-chip class="font-weight-bold mx-3" color="primary" size="small">Total: {{ totalM2Computed }} m²</v-chip>
+                <v-chip class="font-weight-bold mx-3" color="primary" size="small">Total: {{ totalMLComputed }} ml</v-chip>
               </div>
               <v-btn size="small" color="primary" prepend-icon="mdi-plus" variant="outlined" @click="addTarimaLinea">
                 Añadir Línea
@@ -991,35 +984,30 @@
               <table class="w-100 table-technical">
                 <thead>
                   <tr>
-                    <th style="width: 8.33%;">Zona</th>
-                    <th style="width: 16.67%;">Medidas suelos</th>
-                    <th style="width: 8.33%;">m²</th>
-                    <th style="width: 58.33%;">Observaciones</th>
-                    <th style="width: 8.33%;"></th>
+                    <th style="width: 10%;">Zona</th>
+                    <th style="width: 20%;">Medidas suelos</th>
+                    <th style="width: 65%;">Observaciones</th>
+                    <th style="width: 5%;"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(linea, idx) in selectedForm.datos.lineasTarima" :key="linea.id || idx">
                     <td><v-text-field v-model="linea.zona" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td>
-                      <v-text-field 
-                        v-model="linea.medida" 
-                        placeholder="4.20 * 3.50" 
-                        class="table-input"
-                        variant="plain" 
-                        density="compact" 
-                        hide-details
-                        @input="onMedidaTarimaInput(linea)"
-                      ></v-text-field>
-                    </td>
-                    <td>
-                      <v-text-field 
-                        v-model="linea.m2" 
-                        class="table-input"
-                        variant="plain" 
-                        density="compact" 
-                        hide-details
-                      ></v-text-field>
+                      <div class="d-flex align-center justify-space-between w-100 pr-2">
+                        <v-text-field 
+                          v-model="linea.medida" 
+                          placeholder="4.20 * 3.50" 
+                          class="table-input flex-grow-1"
+                          variant="plain" 
+                          density="compact" 
+                          hide-details
+                          @input="onMedidaTarimaInput(linea)"
+                        ></v-text-field>
+                        <span v-if="linea.ml" class="text-caption text-grey-lighten-1 ml-2 flex-shrink-0" style="font-size: 0.75rem; font-family: monospace;">
+                          ({{ linea.ml }} ml / {{ linea.m2 }} m²)
+                        </span>
+                      </div>
                     </td>
                     <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td class="text-right">
@@ -1681,6 +1669,7 @@ export default {
     // Cargar proyecto completo
     onMounted(async () => {
       await projectStore.fetchProjectById(projectId);
+      await projectStore.fetchConfig();
       // Mantener selectedFormId en null al inicio para que se muestre el panel de control general (datos del cliente + estancias)
       selectedFormId.value = null;
       window.addEventListener('resize', handleWindowResize);
@@ -1690,10 +1679,29 @@ export default {
       window.removeEventListener('resize', handleWindowResize);
     });
 
-
-
     // Proyecto reactivo del store
     const project = computed(() => projectStore.currentProject);
+
+    const configTiendas = computed(() => projectStore.config?.tiendas || []);
+    const configVendedores = computed(() => projectStore.config?.vendedores || []);
+
+    const tiendasOptions = computed(() => {
+      const list = [...configTiendas.value];
+      const current = project.value?.tienda;
+      if (current && !list.includes(current)) {
+        list.push(current);
+      }
+      return list;
+    });
+
+    const vendedoresOptions = computed(() => {
+      const list = [...configVendedores.value];
+      const current = project.value?.vendedor;
+      if (current && !list.includes(current)) {
+        list.push(current);
+      }
+      return list;
+    });
 
     // Estancia seleccionada
     const selectedForm = computed(() => {
@@ -2031,11 +2039,12 @@ export default {
     const addTarimaLinea = () => {
       if (selectedForm.value && selectedForm.value.tipo === 'tarimas') {
         const lineas = selectedForm.value.datos.lineasTarima || [];
-        lineas.push({
+        selectedForm.value.datos.lineasTarima.push({
           id: 'l-t-' + (lineas.length + 1) + '-' + Math.random().toString(36).substring(7),
           zona: '',
           medida: '',
           m2: '',
+          ml: '',
           observaciones: ''
         });
       }
@@ -2051,26 +2060,52 @@ export default {
     const onMedidaTarimaInput = (linea) => {
       if (!linea.medida) {
         linea.m2 = '';
+        linea.ml = '';
         return;
       }
       try {
-        let expr = linea.medida.toLowerCase().replace(/x/g, '*');
-        expr = expr.replace(/[^0-9+\-*\/.\(\) ]/g, ''); // Permitir números, operadores y paréntesis básicos
-        
+        // Intentar detectar formato rectángulo: "3.5*4.7", "3,5*4.7", "3.5x4.7", "3,5x4,7"
+        const match = linea.medida.match(/^\s*([0-9]+(?:[\.,][0-9]+)?)\s*[xX*]\s*([0-9]+(?:[\.,][0-9]+)?)\s*$/);
+        if (match) {
+          const a = parseFloat(match[1].replace(',', '.'));
+          const b = parseFloat(match[2].replace(',', '.'));
+          if (!isNaN(a) && !isNaN(b)) {
+            const m2Val = a * b;
+            const mlVal = 2 * (a + b);
+            // Mostrar con 3 cifras significativas
+            linea.m2 = parseFloat(m2Val.toPrecision(3));
+            linea.ml = parseFloat(mlVal.toPrecision(3));
+            return;
+          }
+        }
+
+        // Si no es un rectángulo exacto, calcular m2 como expresión general y limpiar ml
+        let expr = linea.medida.toLowerCase().replace(/,/g, '.').replace(/x/g, '*');
+        expr = expr.replace(/[^0-9+\-*\/.\(\) ]/g, ''); // Permitir números y operadores básicos
         const result = new Function(`return ${expr}`)();
         if (typeof result === 'number' && !isNaN(result)) {
           linea.m2 = Number(result.toFixed(2));
         } else {
           linea.m2 = '';
         }
+        linea.ml = '';
       } catch (err) {
-        linea.m2 = ''; // Expresión matemática incompleta
+        linea.m2 = '';
+        linea.ml = '';
       }
     };
+
     // Calcular la sumatoria total de M2 de las líneas de Tarima de la estancia seleccionada
     const totalM2Computed = computed(() => {
       if (!selectedForm.value || selectedForm.value.tipo !== 'tarimas') return 0;
       const total = selectedForm.value.datos.lineasTarima?.reduce((acc, curr) => acc + (Number(curr.m2) || 0), 0);
+      return Number(total.toFixed(2));
+    });
+
+    // Calcular la sumatoria total de ML de las líneas de Tarima de la estancia seleccionada
+    const totalMLComputed = computed(() => {
+      if (!selectedForm.value || selectedForm.value.tipo !== 'tarimas') return 0;
+      const total = selectedForm.value.datos.lineasTarima?.reduce((acc, curr) => acc + (Number(curr.ml) || 0), 0);
       return Number(total.toFixed(2));
     });
 
@@ -2361,6 +2396,9 @@ export default {
       deleteTarimaLinea,
       onMedidaTarimaInput,
       totalM2Computed,
+      totalMLComputed,
+      tiendasOptions,
+      vendedoresOptions,
       onCanvasSave,
       notesCanvasLeftRef,
       notesCanvasRightRef,

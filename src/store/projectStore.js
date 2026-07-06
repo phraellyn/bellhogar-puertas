@@ -8,6 +8,7 @@ import {
   updateDoc, 
   deleteDoc, 
   getDoc,
+  setDoc,
   query,
   orderBy,
   serverTimestamp
@@ -26,6 +27,10 @@ export const useProjectStore = defineStore('project', {
     currentProject: null,
     loading: false,
     error: null,
+    config: {
+      tiendas: [],
+      vendedores: []
+    }
   }),
 
   actions: {
@@ -169,7 +174,7 @@ export const useProjectStore = defineStore('project', {
       let baseDatos = {};
       if (formType === 'cocina') {
         baseDatos = {
-          iluminacion: "", encimera: "", cubretuboMelaminico: { ancho: "", alto: "", fondo: "" }, observacionesGenerales: "",
+          encimera: "", cubretuboMelaminico: { ancho: "", alto: "", fondo: "" }, observacionesGenerales: "",
           campana: {
             presupuestar: false, propiedadCliente: false, techo: false, pared: false, isla: false,
             integrada: false, telescopica: false, filtroCarbon: false,
@@ -179,16 +184,16 @@ export const useProjectStore = defineStore('project', {
             presupuestar: false, propiedadCliente: false, ancho60: false, ancho45: false,
             libre: false, integrado: false, observaciones: ""
           },
-          lavadora: { presupuestar: false, propiedadCliente: false, ancho60: false, ancho45: false, libre: false, integrado: false, observaciones: "" },
+          lavadora: { presupuestar: false, propiedadCliente: false, ancho60: false, libre: false, integrado: false, observaciones: "" },
           secadora: { presupuestar: false, propiedadCliente: false, libre: false, integrado: false, observaciones: "" },
           frigorifico: { presupuestar: false, propiedadCliente: false, libre: false, integrado: false, alto: "", ancho: "", fondo: "", observaciones: "" },
-          horno: { presupuestar: false, propiedadCliente: false, vapor: false, pirolitico: false, multifuncion: false, bajoPlaca: false, columna: false, observaciones: "" },
+          horno: { presupuestar: false, propiedadCliente: false, bajoPlaca: false, columna: false, observaciones: "" },
           microondas: { presupuestar: false, propiedadCliente: false, libre: false, integrado: false, superior: false, columna: false, observaciones: "" },
-          placa: { presupuestar: false, propiedadCliente: false, induccion: false, radiante: false, gas: false, otros: false, libre: false, integrado: false, observaciones: "" },
-          fregadero: { presupuestar: false, propiedadCliente: false, bajoEncimera: false, opticaEnrasada: false, sobreEncimera: false, observaciones: "" },
-          grifo: { presupuestar: false, propiedadCliente: false, observaciones: "" },
+          placa: { presupuestar: false, propiedadCliente: false, induccion: false, radiante: false, gas: false, ancho30: false, ancho60: false, ancho90: false, otros: false, libre: false, integrado: false, observaciones: "" },
+          fregadero: { presupuestar: false, propiedadCliente: false, bajoEncimera: false, opticaEnrasada: false, sobreEncimera: false, unSeno: false, dosSenos: false, observaciones: "" },
+          grifo: { presupuestar: false, propiedadCliente: false, enEncimera: false, enPared: false, observaciones: "" },
           preguntas: {
-            obraCocina: false, demolerMobiliario: false, hornoMicroColumna: false, deseanComerCocina: false,
+            obraCocina: false, demolerMobiliario: false, deseanComerCocina: false,
             comerDetalle: { mesa: false, barra: false, personas: "" }, alturaCocina: "", mueblesTecho: false, cierreTecho: false,
             alturaMueblesSuperiores: "70", alturaMueblesOtros: "", montajeTransporte: false, instalacionAgua: "Termo", instalacionAguaOtros: ""
           }
@@ -241,7 +246,7 @@ export const useProjectStore = defineStore('project', {
           },
           observacionesGenerales: "",
           lineasTarima: [
-            { id: 'l-t-1', zona: '', medida: '', m2: '', observaciones: '' }
+            { id: 'l-t-1', zona: '', medida: '', m2: '', ml: '', observaciones: '' }
           ]
         };
       }
@@ -544,6 +549,49 @@ export const useProjectStore = defineStore('project', {
       });
 
       this.currentProject.formularios = updatedFormularios;
+    },
+
+    // 16. Obtener configuración global del sitio (Tiendas y Vendedores)
+    async fetchConfig() {
+      try {
+        const docRef = doc(db, 'configuracion', 'valores');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          this.config = {
+            tiendas: data.tiendas || [],
+            vendedores: data.vendedores || []
+          };
+        } else {
+          // Si no existe, inicializar con valores predeterminados
+          const defaultVal = {
+            tiendas: ['Alcorcón', 'Móstoles', 'Madrid'],
+            vendedores: ['Miguel', 'Carlos', 'David']
+          };
+          await setDoc(docRef, defaultVal);
+          this.config = defaultVal;
+        }
+      } catch (err) {
+        console.error('Error al obtener la configuración:', err);
+        if (!this.config || !this.config.tiendas || this.config.tiendas.length === 0) {
+          this.config = {
+            tiendas: ['Alcorcón', 'Móstoles', 'Madrid'],
+            vendedores: ['Miguel', 'Carlos', 'David']
+          };
+        }
+      }
+    },
+
+    // 17. Guardar configuración global del sitio (Tiendas y Vendedores)
+    async saveConfig(newConfig) {
+      try {
+        const docRef = doc(db, 'configuracion', 'valores');
+        await setDoc(docRef, newConfig);
+        this.config = newConfig;
+      } catch (err) {
+        console.error('Error al guardar la configuración:', err);
+        throw err;
+      }
     }
   }
 });
@@ -598,8 +646,24 @@ function normalizeProject(proj) {
       
       if (!form.datos.lineasTarima || !Array.isArray(form.datos.lineasTarima)) {
         form.datos.lineasTarima = [
-          { id: 'l-t-1', zona: '', medida: '', m2: '', observaciones: '' }
+          { id: 'l-t-1', zona: '', medida: '', m2: '', ml: '', observaciones: '' }
         ];
+      } else {
+        form.datos.lineasTarima.forEach(linea => {
+          if (linea.ml === undefined) {
+            linea.ml = '';
+          }
+          if (linea.medida && !linea.ml) {
+            const match = linea.medida.match(/^\s*([0-9]+(?:[\.,][0-9]+)?)\s*[xX*]\s*([0-9]+(?:[\.,][0-9]+)?)\s*$/);
+            if (match) {
+              const a = parseFloat(match[1].replace(',', '.'));
+              const b = parseFloat(match[2].replace(',', '.'));
+              if (!isNaN(a) && !isNaN(b)) {
+                linea.ml = parseFloat((2 * (a + b)).toPrecision(3));
+              }
+            }
+          }
+        });
       }
     } else if (form.tipo === 'puertas') {
       form.datos.acabado = { barnizado: false, madera: "", lacado: false, color: "", ...form.datos.acabado };

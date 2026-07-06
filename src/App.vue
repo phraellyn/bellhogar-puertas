@@ -23,6 +23,16 @@
         Mediciones
       </v-btn>
 
+      <!-- Botón de Configuración -->
+      <v-btn
+        v-if="$route.path !== '/configuracion'"
+        icon="mdi-cog"
+        color="primary"
+        class="mr-2"
+        @click="$router.push('/configuracion')"
+        title="Configuración de tiendas y vendedores"
+      ></v-btn>
+
       <!-- Selector de Tema (Sol / Luna) -->
       <v-btn
         :icon="currentTheme === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
@@ -47,11 +57,13 @@
 
 <script>
 import { ref, onMounted } from 'vue';
+import { useProjectStore } from './store/projectStore';
 
 export default {
   name: 'App',
   setup() {
     const currentTheme = ref('dark');
+    const projectStore = useProjectStore();
 
     const toggleTheme = () => {
       currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark';
@@ -63,6 +75,7 @@ export default {
       if (savedTheme) {
         currentTheme.value = savedTheme;
       }
+      projectStore.fetchConfig();
     });
 
     return {

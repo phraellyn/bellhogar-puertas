@@ -122,13 +122,12 @@ export const generateProjectPDF = async (project) => {
           if (obj.integrada) opts.push('Integrada');
           if (obj.telescopica) opts.push('Telescópica');
           if (obj.filtroCarbon) opts.push('Filtro carbón');
+          if (obj.ancho30) opts.push('Ancho 30');
           if (obj.ancho60) opts.push('Ancho 60');
+          if (obj.ancho90) opts.push('Ancho 90');
           if (obj.ancho45) opts.push('Ancho 45');
           if (obj.libre) opts.push('Libre');
           if (obj.integrado) opts.push('Integrado');
-          if (obj.vapor) opts.push('Vapor');
-          if (obj.pirolitico) opts.push('Piro');
-          if (obj.multifuncion) opts.push('Multi');
           if (obj.bajoPlaca) opts.push('Bajo placa');
           if (obj.columna) opts.push('Columna');
           if (obj.superior) opts.push('Sup.');
@@ -137,8 +136,12 @@ export const generateProjectPDF = async (project) => {
           if (obj.gas) opts.push('Gas');
           if (obj.otros) opts.push('Otros');
           if (obj.bajoEncimera) opts.push('Bajo encimera');
-          if (obj.opticaEnrasada) opts.push('Óptica enrasada');
+          if (obj.opticaEnrasada) opts.push('Enrasado');
           if (obj.sobreEncimera) opts.push('Sobre encimera');
+          if (obj.unSeno) opts.push('Un seno');
+          if (obj.dosSenos) opts.push('Dos senos');
+          if (obj.enEncimera) opts.push('En encimera');
+          if (obj.enPared) opts.push('En pared');
           return opts.join(', ');
         };
 
@@ -153,7 +156,6 @@ export const generateProjectPDF = async (project) => {
           return meds.join(', ');
         };
 
-        if (datos.iluminacion) appRows.push(['ILUMINACIÓN', '', datos.iluminacion, '']);
         if (datos.encimera) appRows.push(['ENCIMERA', '', datos.encimera, '']);
         if (datos.campana) {
           let medStr = fmtMed(datos.campana);
@@ -168,7 +170,7 @@ export const generateProjectPDF = async (project) => {
         if (datos.frigorifico) appRows.push(['FRIGORÍFICO', fmtOpt(datos.frigorifico), fmtMed(datos.frigorifico), datos.frigorifico.observaciones || '']);
         if (datos.horno) appRows.push(['HORNO', fmtOpt(datos.horno), '', datos.horno.observaciones || '']);
         if (datos.microondas) appRows.push(['MICROONDAS', fmtOpt(datos.microondas), '', datos.microondas.observaciones || '']);
-        if (datos.placa) appRows.push(['PLACA DE COCCIÓN', fmtOpt(datos.placa), '', datos.placa.observaciones || '']);
+        if (datos.placa) appRows.push(['PLACA', fmtOpt(datos.placa), '', datos.placa.observaciones || '']);
         if (datos.fregadero) appRows.push(['FREGADERO', fmtOpt(datos.fregadero), '', datos.fregadero.observaciones || '']);
         if (datos.grifo) appRows.push(['GRIFO', fmtOpt(datos.grifo), '', datos.grifo.observaciones || '']);
 
@@ -196,10 +198,10 @@ export const generateProjectPDF = async (project) => {
         const fmtBool = (val) => val ? 'SÍ' : 'NO';
         const faqBody = [
           ['¿Obra en la cocina?', fmtBool(datos.preguntas?.obraCocina), '¿Demoler mobiliario?', fmtBool(datos.preguntas?.demolerMobiliario)],
-          ['¿Columnas horno/micro?', fmtBool(datos.preguntas?.hornoMicroColumna), '¿Muebles al techo?', fmtBool(datos.preguntas?.mueblesTecho)],
-          ['¿Cierre a techo?', fmtBool(datos.preguntas?.cierreTecho), '¿Montaje y transporte?', fmtBool(datos.preguntas?.montajeTransporte)],
-          ['¿Desean comer en cocina?', fmtBool(datos.preguntas?.deseanComerCocina) + (datos.preguntas?.deseanComerCocina ? ` (${datos.preguntas.comerDetalle?.mesa ? 'Mesa' : ''}${datos.preguntas.comerDetalle?.barra ? 'Barra' : ''} - Personas: ${datos.preguntas.comerDetalle?.personas})` : ''), 'Altura de la cocina:', datos.preguntas?.alturaCocina || ''],
-          ['Instalación agua/calefacc.:', (datos.preguntas?.instalacionAgua || '') + (datos.preguntas?.instalacionAgua === 'Otros' ? `: ${datos.preguntas.instalacionAguaOtros}` : ''), 'Altura muebles sup.:', (datos.preguntas?.alturaMueblesSuperiores || '') + (datos.preguntas?.alturaMueblesSuperiores === 'Otros' ? `: ${datos.preguntas.alturaMueblesOtros}` : '')]
+          ['¿Muebles al techo?', fmtBool(datos.preguntas?.mueblesTecho), '¿Cierre a techo?', fmtBool(datos.preguntas?.cierreTecho)],
+          ['¿Montaje y transporte?', fmtBool(datos.preguntas?.montajeTransporte), 'Altura de la cocina:', datos.preguntas?.alturaCocina || ''],
+          ['¿Desean comer en cocina?', fmtBool(datos.preguntas?.deseanComerCocina) + (datos.preguntas?.deseanComerCocina ? ` (${datos.preguntas.comerDetalle?.mesa ? 'Mesa' : ''}${datos.preguntas.comerDetalle?.barra ? 'Barra' : ''} - Personas: ${datos.preguntas.comerDetalle?.personas})` : ''), 'Altura muebles sup.:', (datos.preguntas?.alturaMueblesSuperiores || '') + (datos.preguntas?.alturaMueblesSuperiores === 'Otros' ? `: ${datos.preguntas.alturaMueblesOtros}` : '')],
+          ['Instalación agua/calefacc.:', (datos.preguntas?.instalacionAgua || '') + (datos.preguntas?.instalacionAgua === 'Otros' ? `: ${datos.preguntas.instalacionAguaOtros}` : ''), '', '']
         ];
 
         autoTable(doc, {
@@ -293,13 +295,19 @@ export const generateProjectPDF = async (project) => {
         doc.text('Medidas de Suelos (Tarima):', 15, currentY);
         currentY += 4;
 
-        const lineasBody = datos.lineasTarima.map(l => [
-          l.zona || '', l.medida || '', l.m2 || '', l.observaciones || ''
-        ]);
+        const lineasBody = datos.lineasTarima.map(l => {
+          let medidaStr = l.medida || '';
+          if (l.ml) {
+            medidaStr += ` (${l.ml} ml / ${l.m2} m²)`;
+          }
+          return [
+            l.zona || '', medidaStr, l.observaciones || ''
+          ];
+        });
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Zona', 'Medidas suelos', 'm²', 'Observaciones']],
+          head: [['Zona', 'Medidas suelos', 'Observaciones']],
           body: lineasBody,
           theme: 'striped',
           styles: { fontSize: 8, cellPadding: 2 },
