@@ -26,7 +26,7 @@
       <!-- Botón de Configuración -->
       <v-btn
         v-if="$route.path !== '/configuracion'"
-        icon="mdi-cog"
+        icon="mdi-hammer-wrench"
         color="primary"
         class="mr-2"
         @click="$router.push('/configuracion')"

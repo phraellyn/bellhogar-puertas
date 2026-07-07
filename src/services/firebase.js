@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCREimqpYcyRGTf_6hEd8Vi2DvrC4HGBc4",
@@ -22,4 +23,7 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+
+export const functions = getFunctions(app);
+
 

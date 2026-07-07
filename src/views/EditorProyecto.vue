@@ -240,7 +240,7 @@
           </v-btn>
           
           <v-tabs v-model="activeTab" slider-color="primary" bg-color="transparent">
-            <v-tab value="form" class="font-weight-bold text-white">
+            <v-tab v-if="selectedForm.tipo !== 'varios'" value="form" class="font-weight-bold text-white">
               <v-icon class="mr-1">mdi-file-document-edit</v-icon> Formulario
             </v-tab>
             <v-tab value="notes" class="font-weight-bold text-white">
@@ -293,7 +293,7 @@
       <!-- Ventanas de Contenido de Pestañas (touch=false desactiva el deslizamiento lateral) -->
       <v-window v-model="activeTab" :touch="false" class="flex-grow-1 d-flex flex-column overflow-hidden bg-surface border-golden rounded-b-lg pa-3">
         <!-- 1. PESTAÑA FORMULARIO (Se desplaza de forma independiente e interna si es muy largo) -->
-        <v-window-item value="form" class="fill-height overflow-y-auto pr-1">
+        <v-window-item v-if="selectedForm.tipo !== 'varios'" value="form" class="fill-height overflow-y-auto pr-1">
           <div class="d-flex align-center justify-space-between mb-4">
             <h2 class="text-h6 font-weight-bold text-white">
               Ficha Técnica: {{ selectedForm.nombre }}
@@ -1114,6 +1114,30 @@
                   @click="triggerNotesClear"
                   title="Limpiar lienzo"
                 ></v-btn>
+                <v-btn
+                  :icon="showGrid ? 'mdi-grid' : 'mdi-grid-off'"
+                  size="small"
+                  variant="outlined"
+                  :color="showGrid ? 'primary' : 'white'"
+                  class="border-golden"
+                  @click="showGrid = !showGrid"
+                  :title="showGrid ? 'Ocultar cuadrícula de fondo' : 'Mostrar cuadrícula de fondo'"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-brain"
+                  size="small"
+                  variant="flat"
+                  color="primary"
+                  @click="transcribeActivePage"
+                  :loading="transcribing"
+                  title="Digitalizar anotaciones con IA (gemini-2.5-flash)"
+                ></v-btn>
+                <span
+                  v-if="transcribingStatus && activeTab === 'notes'"
+                  class="text-caption text-primary font-weight-medium animate-pulse ml-1"
+                >
+                  {{ transcribingStatus }}
+                </span>
               </div>
 
               <!-- Grupo de Navegación de Páginas -->
@@ -1171,7 +1195,12 @@
             <!-- Área de Canvases -->
             <div class="flex-grow-1 flex-shrink-1 d-flex gap-4 overflow-hidden" style="min-height: 0;">
               <!-- Canvas Izquierda -->
-              <div v-if="notesLeftPage" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+              <div
+                v-if="notesLeftPage"
+                class="fill-height d-flex flex-column position-relative"
+                style="flex: 1; min-width: 0; cursor: pointer;"
+                @pointerdown="activeNotesPageId = notesLeftPage.id"
+              >
                 <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
                   Página {{ notesLeftPageIndex + 1 }}
                 </div>
@@ -1183,14 +1212,16 @@
                   :project-id="project.id"
                   :form-id="selectedForm.id"
                   :image-url="notesLeftPage.url"
+                  :texto-reconocido="notesLeftPage.textoReconocido"
                   :is-active="activeTab === 'notes'"
                   :active-tool="activeTool"
                   :brush-size="brushSize"
                   :brush-color="brushColor"
+                  :show-grid="showGrid"
                   @save="onCanvasSave"
                   @focus="activeNotesPageId = $event"
                   :style="{
-                    border: activeNotesPageId === notesLeftPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                    border: (activeNotesPageId === notesLeftPage.id || !activeNotesPageId) ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
                     borderRadius: '8px'
                   }"
                 />
@@ -1199,28 +1230,36 @@
               <!-- Canvas Derecha (Solo en Two Page Layout) -->
               <div v-if="isTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
                 <template v-if="notesRightPage">
-                  <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
-                    Página {{ notesRightPageIndex + 1 }}
+                  <div
+                    class="fill-height d-flex flex-column position-relative"
+                    style="flex: 1; min-width: 0; cursor: pointer;"
+                    @pointerdown="activeNotesPageId = notesRightPage.id"
+                  >
+                    <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                      Página {{ notesRightPageIndex + 1 }}
+                    </div>
+                    <sketch-canvas
+                      ref="notesCanvasRightRef"
+                      :key="notesRightPage.id"
+                      :page-id="notesRightPage.id"
+                      canvas-type="anotaciones"
+                      :project-id="project.id"
+                      :form-id="selectedForm.id"
+                      :image-url="notesRightPage.url"
+                      :texto-reconocido="notesRightPage.textoReconocido"
+                      :is-active="activeTab === 'notes'"
+                      :active-tool="activeTool"
+                      :brush-size="brushSize"
+                      :brush-color="brushColor"
+                      :show-grid="showGrid"
+                      @save="onCanvasSave"
+                      @focus="activeNotesPageId = $event"
+                      :style="{
+                        border: activeNotesPageId === notesRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                        borderRadius: '8px'
+                      }"
+                    />
                   </div>
-                  <sketch-canvas
-                    ref="notesCanvasRightRef"
-                    :key="notesRightPage.id"
-                    :page-id="notesRightPage.id"
-                    canvas-type="anotaciones"
-                    :project-id="project.id"
-                    :form-id="selectedForm.id"
-                    :image-url="notesRightPage.url"
-                    :is-active="activeTab === 'notes'"
-                    :active-tool="activeTool"
-                    :brush-size="brushSize"
-                    :brush-color="brushColor"
-                    @save="onCanvasSave"
-                    @focus="activeNotesPageId = $event"
-                    :style="{
-                      border: activeNotesPageId === notesRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
-                      borderRadius: '8px'
-                    }"
-                  />
                 </template>
                 <v-card
                   v-else
@@ -1333,6 +1372,30 @@
                   @click="triggerSketchClear"
                   title="Limpiar lienzo"
                 ></v-btn>
+                <v-btn
+                  :icon="showGrid ? 'mdi-grid' : 'mdi-grid-off'"
+                  size="small"
+                  variant="outlined"
+                  :color="showGrid ? 'primary' : 'white'"
+                  class="border-golden"
+                  @click="showGrid = !showGrid"
+                  :title="showGrid ? 'Ocultar cuadrícula de fondo' : 'Mostrar cuadrícula de fondo'"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-brain"
+                  size="small"
+                  variant="flat"
+                  color="primary"
+                  @click="transcribeActivePage"
+                  :loading="transcribing"
+                  title="Generar plano SVG con IA (gemini-3.5-flash)"
+                ></v-btn>
+                <span
+                  v-if="transcribingStatus && activeTab === 'sketch'"
+                  class="text-caption text-primary font-weight-medium animate-pulse ml-1"
+                >
+                  {{ transcribingStatus }}
+                </span>
               </div>
 
               <!-- Grupo de Navegación de Páginas -->
@@ -1390,7 +1453,12 @@
             <!-- Área de Canvases -->
             <div class="flex-grow-1 flex-shrink-1 d-flex gap-4 overflow-hidden" style="min-height: 0;">
               <!-- Canvas Izquierda -->
-              <div v-if="sketchLeftPage" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+              <div
+                v-if="sketchLeftPage"
+                class="fill-height d-flex flex-column position-relative"
+                style="flex: 1; min-width: 0; cursor: pointer;"
+                @pointerdown="activeSketchPageId = sketchLeftPage.id"
+              >
                 <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
                   Página {{ sketchLeftPageIndex + 1 }}
                 </div>
@@ -1402,14 +1470,16 @@
                   :project-id="project.id"
                   :form-id="selectedForm.id"
                   :image-url="sketchLeftPage.url"
+                  :texto-reconocido="sketchLeftPage.textoReconocido"
                   :is-active="activeTab === 'sketch'"
                   :active-tool="activeTool"
                   :brush-size="brushSize"
                   :brush-color="brushColor"
+                  :show-grid="showGrid"
                   @save="onCanvasSave"
                   @focus="activeSketchPageId = $event"
                   :style="{
-                    border: activeSketchPageId === sketchLeftPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                    border: (activeSketchPageId === sketchLeftPage.id || !activeSketchPageId) ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
                     borderRadius: '8px'
                   }"
                 />
@@ -1418,28 +1488,36 @@
               <!-- Canvas Derecha (Solo en Two Page Layout) -->
               <div v-if="isTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
                 <template v-if="sketchRightPage">
-                  <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
-                    Página {{ sketchRightPageIndex + 1 }}
+                  <div
+                    class="fill-height d-flex flex-column position-relative"
+                    style="flex: 1; min-width: 0; cursor: pointer;"
+                    @pointerdown="activeSketchPageId = sketchRightPage.id"
+                  >
+                    <div class="position-absolute text-caption font-weight-bold text-primary bg-secondary px-2 py-0.5 rounded-br-lg" style="z-index: 10; top: 0; left: 0; border: 1px solid rgba(226,192,96,0.15); border-top: none; border-left: none;">
+                      Página {{ sketchRightPageIndex + 1 }}
+                    </div>
+                    <sketch-canvas
+                      ref="sketchCanvasRightRef"
+                      :key="sketchRightPage.id"
+                      :page-id="sketchRightPage.id"
+                      canvas-type="boceto"
+                      :project-id="project.id"
+                      :form-id="selectedForm.id"
+                      :image-url="sketchRightPage.url"
+                      :texto-reconocido="sketchRightPage.textoReconocido"
+                      :is-active="activeTab === 'sketch'"
+                      :active-tool="activeTool"
+                      :brush-size="brushSize"
+                      :brush-color="brushColor"
+                      :show-grid="showGrid"
+                      @save="onCanvasSave"
+                      @focus="activeSketchPageId = $event"
+                      :style="{
+                        border: activeSketchPageId === sketchRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
+                        borderRadius: '8px'
+                      }"
+                    />
                   </div>
-                  <sketch-canvas
-                    ref="sketchCanvasRightRef"
-                    :key="sketchRightPage.id"
-                    :page-id="sketchRightPage.id"
-                    canvas-type="boceto"
-                    :project-id="project.id"
-                    :form-id="selectedForm.id"
-                    :image-url="sketchRightPage.url"
-                    :is-active="activeTab === 'sketch'"
-                    :active-tool="activeTool"
-                    :brush-size="brushSize"
-                    :brush-color="brushColor"
-                    @save="onCanvasSave"
-                    @focus="activeSketchPageId = $event"
-                    :style="{
-                      border: activeSketchPageId === sketchRightPage.id ? '2px solid #e2c060 !important' : '1px solid rgba(226,192,96,0.2) !important',
-                      borderRadius: '8px'
-                    }"
-                  />
                 </template>
                 <v-card
                   v-else
@@ -1494,9 +1572,10 @@
               v-model="newFormType"
               label="Tipo de Ficha *"
               :items="[
-                { title: 'Cocinas', value: 'cocina' },
-                { title: 'Puertas de paso', value: 'puertas' },
-                { title: 'Tarimas y Suelos', value: 'tarimas' }
+                { title: 'Puertas', value: 'puertas' },
+                { title: 'Tarima', value: 'tarimas' },
+                { title: 'Cocina', value: 'cocina' },
+                { title: 'Otros', value: 'varios' }
               ]"
               variant="outlined"
               :rules="[v => !!v || 'Debes seleccionar un tipo']"
@@ -1581,6 +1660,8 @@ import { useProjectStore } from '../store/projectStore';
 import SketchCanvas from '../components/SketchCanvas.vue';
 import FileUploader from '../components/FileUploader.vue';
 import { generateProjectPDF, uploadPDFToStorage, sendSummaryEmail } from '../services/emailService';
+import { functions } from '../services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export default {
   name: 'EditorProyecto',
@@ -1786,7 +1867,12 @@ export default {
 
     const selectForm = (formId) => {
       selectedFormId.value = formId;
-      activeTab.value = 'form'; // Volver a la pestaña de formulario al cambiar
+      const form = project.value?.formularios?.find(f => f.id === formId);
+      if (form && form.tipo === 'varios') {
+        activeTab.value = 'notes';
+      } else {
+        activeTab.value = 'form';
+      }
     };
 
     // Nombres e iconos según el tipo de ficha
@@ -1795,6 +1881,7 @@ export default {
         case 'cocina': return 'mdi-chef-hat';
         case 'puertas': return 'mdi-door-closed';
         case 'tarimas': return 'mdi-layers-triple';
+        case 'varios': return 'mdi-folder-text-outline';
         default: return 'mdi-file-document';
       }
     };
@@ -1804,6 +1891,7 @@ export default {
         case 'cocina': return 'orange';
         case 'puertas': return 'primary';
         case 'tarimas': return 'success';
+        case 'varios': return 'purple';
         default: return 'white';
       }
     };
@@ -1813,6 +1901,7 @@ export default {
         case 'cocina': return 'Cocina';
         case 'puertas': return 'Puertas';
         case 'tarimas': return 'Tarimas';
+        case 'varios': return 'Varios';
         default: return 'Ficha';
       }
     };
@@ -2109,6 +2198,212 @@ export default {
       return Number(total.toFixed(2));
     });
 
+    // Transcripción con IA de la página activa (Texto o Plano SVG)
+    const transcribing = ref(false);
+    const transcribingStatus = ref(''); // Mensaje descriptivo del estado actual
+    const showGrid = ref(true); // Toggle para mostrar/ocultar cuadrícula de fondo
+
+    const transcribeActivePage = async () => {
+      if (!project.value || !selectedForm.value) return;
+
+      let activePage = null;
+      let canvasRef = null;
+
+      if (activeTab.value === 'notes') {
+        // Prioridad: página con foco dorado. Si ninguna tiene foco, usar la izquierda.
+        const isLeft = !activeNotesPageId.value || activeNotesPageId.value === notesLeftPage.value?.id;
+        activePage = isLeft ? notesLeftPage.value : notesRightPage.value;
+        canvasRef = isLeft ? notesCanvasLeftRef.value : notesCanvasRightRef.value;
+      } else if (activeTab.value === 'sketch') {
+        const isLeft = !activeSketchPageId.value || activeSketchPageId.value === sketchLeftPage.value?.id;
+        activePage = isLeft ? sketchLeftPage.value : sketchRightPage.value;
+        canvasRef = isLeft ? sketchCanvasLeftRef.value : sketchCanvasRightRef.value;
+      }
+
+      if (!activePage || !canvasRef) {
+        alert(`Por favor, selecciona una página de ${activeTab.value === 'notes' ? 'anotaciones' : 'bocetos'} haciendo clic sobre ella.`);
+        return;
+      }
+
+      // Comprobar si el canvas tiene trazos antes de llamar a la IA
+      if (canvasRef.isCanvasBlank()) {
+        alert('El lienzo está en blanco. Dibuja algunas anotaciones antes de digitalizar.');
+        return;
+      }
+
+      transcribing.value = true;
+      transcribingStatus.value = activeTab.value === 'notes' ? 'Capturando anotaciones...' : 'Capturando boceto plano...';
+
+      try {
+        // ─── Captura directa del canvas (rápida, con soporte asíncrono) ───
+        const imageBase64 = await canvasRef.captureCanvasOnly();
+        if (!imageBase64) {
+          throw new Error("No se pudo capturar el contenido del lienzo.");
+        }
+
+        // Texto o SVG previamente reconocido para esta página (contexto previo)
+        const textoAnterior = activePage.textoReconocido || '';
+
+        const askAICallable = httpsCallable(functions, 'askAI', { timeout: 300000 });
+        let result;
+
+        // ════════════════════════════════════════════════════════════
+        // MODO ANOTACIONES
+        // Modelo: google/gemini-2.5-flash — OCR rápido y económico (~2-4s)
+        // ════════════════════════════════════════════════════════════
+        if (activeTab.value === 'notes') {
+          transcribingStatus.value = 'Reconociendo texto manuscrito...';
+
+          const hasContexto = textoAnterior.trim().length > 0;
+
+          const systemPrompt = `Eres un asistente experto en reformas y carpintería. Tu tarea es transcribir, corregir y mantener actualizadas las anotaciones de una hoja de medición.
+
+La imagen que recibes muestra:
+- De fondo: el texto digitalizado que ya estaba reconocido anteriormente (en tipografía limpia de ordenador).
+- En primer plano: los trazos del técnico dibujados a mano con lápiz negro/oscuro.
+
+REGLAS DE ACTUALIZACIÓN (ESTRICTAS):
+1. PRESERVAR EL TEXTO PREVIO: Debes conservar el texto digitalizado original EXACTAMENTE como está en la referencia textual proporcionada, respetando cada palabra, número, orden, líneas y formato. No modifiques ni resumas ninguna línea preexistente que no haya sido tachada.
+2. TACHADURAS (DEFINICIÓN ESTRICTA): Para que algo se considere tachado/borrado, debe haber una línea manuscrita trazada FÍSICAMENTE POR ENCIMA de las letras del texto de fondo (es decir, tachándolo directamente encima de los caracteres). Los signos dibujados antes, después o alrededor del texto (como guiones "-", asteriscos "*", flechas o barras "/ ") NO son tachaduras; son anotaciones o guiones de lista que deben respetarse o añadirse.
+3. NUEVAS ANOTACIONES (ENMIENDAS): Transcribe los nuevos textos manuscritos escritos por el técnico en zonas libres y añádelos como nuevas líneas al final del texto actual (o insértalos donde corresponda si indican un lugar específico), sin alterar el texto original.
+4. CERO ALUCINACIÓN / NO INVENTAR (CRÍTICO): Solo transcribe palabras y números que sean 100% legibles en la imagen. Si ves un trazo manuscrito ambiguo, una línea, una flecha de cota, un garabato o una marca de dibujo que no forme palabras o cifras claras, IGNÓRALO por completo. No intentes adivinar, asumir o inventar textos que no existan en la imagen.
+5. Devuelve ÚNICAMENTE el texto consolidado resultant. Sin preámbulos, explicaciones de cambios o comentarios.`;
+
+          let prompt;
+          if (hasContexto) {
+            prompt = `TEXTO DIGITALIZADO ACTUAL (DEBE PRESERVARSE EXACTAMENTE IGUAL EXCEPTO SI TIENE TACHADURAS FÍSICAS EN LA IMAGEN):
+---
+${textoAnterior}
+---
+
+Compara este texto de referencia con la imagen.
+Conserva el texto original palabra por palabra. Únicamente:
+- Si alguna línea o palabra del texto digitalizado está tachada físicamente por una línea manuscrita que pasa por encima de las letras en la imagen, elimínala.
+- Los guiones "-" o símbolos añadidos delante/detrás del texto NO son tachaduras. Mantén la anotación.
+- Transcribe las nuevas anotaciones manuscritas que aparezcan en la imagen y agrégalas como nuevas líneas al final del texto.
+- ATENCIÓN: No inventes nada. Si hay marcas, flechas o trazos manuscritos que no sean texto claro y legible, no escribas nada para ellos.
+Genera la lista final consolidada siguiendo estas reglas estrictas.`;
+          } else {
+            prompt = `Transcribe todas las anotaciones manuscritas visibles en esta hoja de medición. No inventes nada si los trazos no son texto legible y ten en cuenta que los guiones "-" son caracteres normales y no tachaduras.`;
+          }
+
+          result = await askAICallable({
+            prompt,
+            systemPrompt,
+            imageBase64,
+            model: 'google/gemini-2.5-flash'
+          });
+
+        } else if (activeTab.value === 'sketch') {
+          transcribingStatus.value = 'Generando plano técnico SVG...';
+
+          const hasSvgAnterior = textoAnterior.trim().startsWith('<svg');
+
+          const systemPrompt = `Eres un arquitecto de obra y delineante CAD experto. Tu trabajo es convertir croquis a mano alzada en planos de planta técnicos profesionales en formato SVG.
+
+La imagen que recibes muestra:
+- De fondo (si existe): el plano SVG digitalizado previamente (trazados vectoriales negros).
+- En primer plano: los trazos nuevos dibujados a mano con lápiz (paredes adicionales, anotaciones de medidas, mobiliario).
+
+REGLAS DE SALIDA Y GEOMETRÍA (ESTRICTAS):
+1. RESPUESTA: Devuelve EXCLUSIVAMENTE el código SVG válido, comenzando con "<svg" y terminando con "</svg>". Sin bloques markdown (como \`\`\`xml o \`\`\`svg), sin saludos, sin preámbulos, y sin texto explicativo. Solo código fuente SVG listo para inyectarse directamente.
+2. TRAZO NEGRO / GRIS OSCURO: Todo el plano (muros, ventanas, puertas, cotas, textos) debe dibujarse con trazos y rellenos en negro (#1a1a1a) o gris muy oscuro. No uses otros colores.
+3. MUROS/PAREDES: Represéntalos como líneas gruesas rectas o rectángulos cerrados negros (stroke-width="10" o stroke-width="12") formando ángulos perfectos de 90° (geometría limpia y regularizada).
+4. MEDIDAS Y COTAS COMPLETAS ("SLOPED"):
+   - Identifica todas las cotas numéricas escritas a mano (ej: "3.50", "2.10", "80").
+   - INFERENCIA OBLIGATORIA: Como el usuario solo escribirá a mano algunas medidas principales, debes INFERIR y CALCULAR geométricamente la longitud de todas las demás líneas, paredes, puertas o vanos que falten. El plano final debe quedar 100% acotado en todas sus paredes y vanos.
+   - ROTACIÓN PARALELA ("SLOPED ANNOTATIONS"): El texto de la cifra de medida debe estar alineado y paralelo a su línea de cota y pared correspondiente, girado en el rango de 0 a 90 grados para que sea legible.
+     * Para paredes horizontales: texto horizontal (sin rotación, 0 grados).
+     * Para paredes verticales: rota el texto exactamente 90 grados (paralelo a la cota vertical) usando transform="rotate(-90, x, y)" en el punto medio. El texto debe leerse cómodamente desde la derecha.
+     * Para paredes diagonales: calcula el ángulo de inclinación de la línea y aplica transform="rotate(angulo, x, y)" para que el texto de la cota quede paralelo al segmento en un rango legible de lectura (0° a 90°).
+     * Dibuja siempre la línea de cota fina en negro (stroke-width="1.5") con sus marcas cruzadas en los extremos antes de poner el texto.
+5. PUERTAS: Dibuja la hoja de la puerta abierta en un ángulo de 90° y su arco de swing de apertura con una línea fina discontinua (stroke-width="1.5" stroke-dasharray="4,4").
+6. VENTANAS: Represéntalas como dos líneas finas paralelas dentro del muro (para denotar vidrio).
+7. VIEWBOX Y CENTRADO DE GEOMETRÍA (CRÍTICO):
+   - El plano completo (muros + cotas + textos de medida) debe estar perfectamente CENTRADO matemáticamente en el área de coordenadas del viewBox.
+   - Evita espacios vacíos asimétricos o desviar el plano hacia abajo o hacia la derecha.
+   - Margen uniforme: Calcula el rectángulo delimitador (bounding box) real exacto de toda la geometría y textos del plano, y establece el viewBox de la etiqueta <svg> (ej: viewBox="X_MIN Y_MIN ANCHO ALTO") restando un margen limpio y uniforme de al menos 90px a 110px a los lados para que nada desborde ni se corte en los extremos.
+   - Declaración de etiqueta SVG: El tag raíz debe ser <svg width="100%" height="100%" viewBox="..." preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"> para asegurar un centrado responsive perfecto en el navegador.
+8. FONDO: El SVG debe tener fondo transparente (sin rectángulos de fondo blanco).`;
+
+          let prompt;
+          if (hasSvgAnterior) {
+            prompt = `El técnico ha añadido nuevos trazos a lápiz sobre el plano SVG anterior.
+A continuación tienes el código del plano SVG anterior como referencia textual:
+---
+${textoAnterior.substring(0, 7000)}
+---
+
+Compara esta estructura con la imagen (que tiene este mismo plano de fondo y los trazos de lápiz nuevos encima).
+Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en sus cifras, y perfectamente centrado. Conserva la coherencia del plano anterior y responde únicamente con el código SVG.`;
+          } else {
+            prompt = `Genera un plano técnico SVG completo, regularizado, 100% acotado con cifras paralelas (sloped) a sus respectivas paredes y perfectamente centrado a partir de este boceto a mano alzada. Responde únicamente con el código SVG.`;
+          }
+
+          result = await askAICallable({
+            prompt,
+            systemPrompt,
+            imageBase64,
+            model: 'google/gemini-2.5-pro',
+            maxTokens: 8000
+          });
+        }
+
+        if (!result) return;
+
+        transcribingStatus.value = 'Procesando respuesta...';
+
+        let newText = result.data?.text || '';
+        console.log('[IA] Modelo usado:', result.data?.modelUsed);
+        console.log('[IA] Respuesta (primeros 500 chars):', newText.substring(0, 500));
+
+        // ─── Limpiar bloques markdown si la IA los incluyó por error ───
+        const mdPatterns = ['```xml', '```html', '```svg', '```'];
+        for (const pattern of mdPatterns) {
+          if (newText.includes(pattern)) {
+            const parts = newText.split(pattern);
+            if (parts.length >= 3) {
+              newText = parts[1].split('```')[0].trim();
+            } else if (parts.length === 2) {
+              newText = parts[1].replace(/```$/, '').trim();
+            }
+            break;
+          }
+        }
+
+        // Para boceto: asegurarse de que empieza con <svg
+        if (activeTab.value === 'sketch' && newText && !newText.trim().startsWith('<svg')) {
+          const svgStart = newText.indexOf('<svg');
+          if (svgStart > -1) {
+            newText = newText.substring(svgStart);
+            const svgEnd = newText.lastIndexOf('</svg>');
+            if (svgEnd > -1) newText = newText.substring(0, svgEnd + 6);
+          }
+        }
+
+        console.log('[IA] Texto final procesado (primeros 300 chars):', newText.substring(0, 300));
+
+        // ─── Guardar en Firestore ───
+        await projectStore.updatePageText(project.value.id, selectedForm.value.id, activePage.id, newText);
+
+        // ─── Limpiar el canvas de dibujos manuscritos ───
+        // El resultado ya está digitalizado y en la capa inferior de fondo.
+        canvasRef.clearCanvas();
+
+        transcribingStatus.value = '¡Listo!';
+        setTimeout(() => { transcribingStatus.value = ''; }, 2000);
+
+      } catch (err) {
+        console.error('[IA] Error al transcribir:', err);
+        transcribingStatus.value = '';
+        const msg = err?.message || 'Error desconocido';
+        alert(`Error al procesar con IA:\n${msg}\n\nComprueba que la API Key de OpenRouter está configurada y el modelo está disponible.`);
+      } finally {
+        transcribing.value = false;
+      }
+    };
+
+
     // 7. Recibir el evento para guardar canvas de Anotación o Croquis (Silencioso, sin alert)
     const onCanvasSave = async ({ blob, canvasType, formId, pageId, callback }) => {
       try {
@@ -2399,6 +2694,9 @@ export default {
       totalMLComputed,
       tiendasOptions,
       vendedoresOptions,
+      transcribing,
+      transcribingStatus,
+      transcribeActivePage,
       onCanvasSave,
       notesCanvasLeftRef,
       notesCanvasRightRef,
@@ -2436,6 +2734,7 @@ export default {
       activeTool,
       brushSize,
       brushColor,
+      showGrid,
       colors,
       selectColor,
       activeNotesPageId,

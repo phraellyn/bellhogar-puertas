@@ -249,6 +249,8 @@ export const useProjectStore = defineStore('project', {
             { id: 'l-t-1', zona: '', medida: '', m2: '', ml: '', observaciones: '' }
           ]
         };
+      } else if (formType === 'varios') {
+        baseDatos = {};
       }
 
       const newForm = {
@@ -592,6 +594,53 @@ export const useProjectStore = defineStore('project', {
         console.error('Error al guardar la configuración:', err);
         throw err;
       }
+    },
+
+    // 18. Actualizar el texto o plano transcrito por la IA de una página
+    async updatePageText(projectId, formId, pageId, text) {
+      if (!this.currentProject) return;
+
+      const updatedFormularios = this.currentProject.formularios.map(f => {
+        if (f.id === formId) {
+          // Intentar actualizar en anotacionesPages
+          const anotacionesPages = f.dibujos?.anotacionesPages?.map(p => {
+            if (p.id === pageId) {
+              return { ...p, textoReconocido: text };
+            }
+            return p;
+          }) || [];
+
+          // Intentar actualizar en bocetoPages
+          const bocetoPages = f.dibujos?.bocetoPages?.map(p => {
+            if (p.id === pageId) {
+              return { ...p, textoReconocido: text };
+            }
+            return p;
+          }) || [];
+
+          return {
+            ...f,
+            dibujos: {
+              ...f.dibujos,
+              anotacionesPages,
+              bocetoPages
+            }
+          };
+        }
+        return f;
+      });
+
+      try {
+        const docRef = doc(db, 'proyectos', projectId);
+        await updateDoc(docRef, {
+          formularios: updatedFormularios,
+          fechaModificacion: serverTimestamp()
+        });
+        this.currentProject.formularios = updatedFormularios;
+      } catch (err) {
+        console.error('Error al guardar el texto/plano reconocido:', err);
+        throw err;
+      }
     }
   }
 });
@@ -609,13 +658,23 @@ function normalizeProject(proj) {
     }
     if (!form.dibujos.anotacionesPages || !Array.isArray(form.dibujos.anotacionesPages)) {
       form.dibujos.anotacionesPages = form.dibujos.anotacionesUrl
-        ? [{ id: 'page-init-notes', url: form.dibujos.anotacionesUrl }]
-        : [{ id: 'page-init-notes-' + Math.random().toString(36).substring(2, 9), url: null }];
+        ? [{ id: 'page-init-notes', url: form.dibujos.anotacionesUrl, textoReconocido: "" }]
+        : [{ id: 'page-init-notes-' + Math.random().toString(36).substring(2, 9), url: null, textoReconocido: "" }];
+    } else {
+      form.dibujos.anotacionesPages = form.dibujos.anotacionesPages.map(page => ({
+        ...page,
+        textoReconocido: page.textoReconocido || ""
+      }));
     }
     if (!form.dibujos.bocetoPages || !Array.isArray(form.dibujos.bocetoPages)) {
       form.dibujos.bocetoPages = form.dibujos.bocetoUrl
-        ? [{ id: 'page-init-sketch', url: form.dibujos.bocetoUrl }]
-        : [{ id: 'page-init-sketch-' + Math.random().toString(36).substring(2, 9), url: null }];
+        ? [{ id: 'page-init-sketch', url: form.dibujos.bocetoUrl, textoReconocido: "" }]
+        : [{ id: 'page-init-sketch-' + Math.random().toString(36).substring(2, 9), url: null, textoReconocido: "" }];
+    } else {
+      form.dibujos.bocetoPages = form.dibujos.bocetoPages.map(page => ({
+        ...page,
+        textoReconocido: page.textoReconocido || ""
+      }));
     }
     if (form.tipo === 'tarimas') {
       form.datos.modeloTarima = { grosor: "", aislante: "", ...form.datos.modeloTarima };

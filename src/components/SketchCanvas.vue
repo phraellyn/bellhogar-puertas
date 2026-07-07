@@ -18,8 +18,21 @@
           @touchend.prevent.stop
         ></canvas>
 
-        <!-- Capa de Cuadrícula de Plano (Siempre Visible, sobre el canvas centrado) -->
-        <div v-if="showGrid" class="grid-overlay" :class="{ 'grid-only-clear': canvasType === 'anotaciones' }"></div>
+        <!-- Capa de Texto/Plano IA detrás del Canvas -->
+        <div
+          v-if="textoReconocido"
+          class="text-layer"
+          :style="{ padding: isSvg ? '0px' : '25px' }"
+          v-html="textoReconocido"
+        >
+        </div>
+
+        <!-- Capa de Cuadrícula de Plano (Sobre el canvas centrado, según showGrid) -->
+        <div
+          v-if="showGrid"
+          class="grid-overlay"
+          :class="{ 'grid-only-clear': canvasType === 'anotaciones' }"
+        ></div>
       </div>
 
       <!-- Mensaje de Carga del Dibujo Guardado -->
@@ -32,7 +45,8 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
+// html2canvas eliminado: la captura del canvas se hace directamente con canvas.toDataURL()
 
 export default {
   name: 'SketchCanvas',
@@ -79,6 +93,15 @@ export default {
     brushColor: {
       type: String,
       default: '#101010'
+    },
+    textoReconocido: {
+      type: String,
+      default: ""
+    },
+    // Control externo de visibilidad de la cuadrícula/rejilla
+    showGrid: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['save', 'focus'],
@@ -87,8 +110,8 @@ export default {
     const context = ref(null);
     const isDrawing = ref(false);
     
-    // Cuadrícula siempre encendida
-    const showGrid = ref(true);
+    // Determinar si el texto digitalizado es un plano SVG
+    const isSvg = computed(() => props.textoReconocido?.trim().startsWith('<svg') || false);
     
     const loadingImage = ref(false);
     
@@ -201,8 +224,7 @@ export default {
       const width = cvs.width / 2;
       const height = cvs.height / 2;
       
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
     };
 
     const confirmClear = () => {
@@ -435,9 +457,112 @@ export default {
       showGrid.value = true;
     });
 
+    /**
+     * Captura solo el canvas de dibujo como imagen JPEG base64.
+     * Método rápido: exporta directamente el canvas nativo sin pasar por el DOM.
+     * El fondo se fuerza a blanco para que la IA lea correctamente los trazos.
+     * Ventajas vs html2canvas: ~10x más rápido, sin artefactos CSS, imagen más limpia.
+     */
+    const captureCanvasOnly = async () => {
+      const cvs = canvas.value;
+      if (!cvs) return null;
+
+      // Calcular escala real entre la resolución interna del canvas y su tamaño CSS
+      const targetWidth = parseInt(cvs.style.width, 10) || (cvs.width / 2);
+      const scale = cvs.width / targetWidth;
+
+      // Crear un canvas temporal con fondo blanco para que los trazos sean legibles
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = cvs.width;
+      exportCanvas.height = cvs.height;
+      const exportCtx = exportCanvas.getContext('2d');
+
+      // Fondo blanco
+      exportCtx.fillStyle = '#ffffff';
+      exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+      // Si es de tipo anotaciones y hay texto previo, dibujarlo de fondo
+      if (props.canvasType === 'anotaciones' && props.textoReconocido) {
+        const paddingLeft = 25 * scale;
+        const paddingTop = 25 * scale;
+        const fontSize = 16 * scale;
+        const lineHeight = fontSize * 1.5;
+
+        exportCtx.font = `${fontSize}px 'Outfit', 'Inter', sans-serif`;
+        exportCtx.fillStyle = '#1a1a1a'; // Gris oscuro igual que el CSS de .text-layer
+        exportCtx.textBaseline = 'top';
+
+        const lines = props.textoReconocido.split('\n');
+        let currentY = paddingTop;
+        for (const line of lines) {
+          exportCtx.fillText(line, paddingLeft, currentY);
+          currentY += lineHeight;
+        }
+      } else if (props.canvasType === 'boceto' && props.textoReconocido && props.textoReconocido.trim().startsWith('<svg')) {
+        // Renderizar el SVG anterior de fondo
+        await new Promise((resolve) => {
+          let svgContent = props.textoReconocido;
+          // Forzar que el SVG tenga las dimensiones exactas del canvas de exportación para una rasterización nativa a escala
+          svgContent = svgContent.replace(/<svg([^>]*)/i, (match, p1) => {
+            let cleaned = p1.replace(/\b(width|height)\s*=\s*['"][^'"]*['"]/g, '');
+            return `<svg${cleaned} width="${exportCanvas.width}" height="${exportCanvas.height}"`;
+          });
+
+          const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          const img = new Image();
+          img.onload = () => {
+            // Dibujar el SVG ocupando todo el lienzo
+            exportCtx.drawImage(img, 0, 0, exportCanvas.width, exportCanvas.height);
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          img.onerror = (err) => {
+            console.error('Error al cargar imagen SVG de fondo en el canvas temporal:', err);
+            URL.revokeObjectURL(url);
+            resolve(); // Continuamos igual
+          };
+          img.src = url;
+        });
+      }
+
+      // Dibujar los trazos del usuario encima
+      exportCtx.drawImage(cvs, 0, 0);
+
+      // Exportar como JPEG con calidad 0.85 — buen equilibrio tamaño/legibilidad
+      return exportCanvas.toDataURL('image/jpeg', 0.85);
+    };
+
+    /**
+     * Comprueba si el canvas está en blanco (sin trazos del usuario).
+     * Útil para evitar llamar a la IA cuando no hay nada dibujado.
+     */
+    const isCanvasBlank = () => {
+      const cvs = canvas.value;
+      const ctx = context.value;
+      if (!cvs || !ctx) return true;
+
+      const pixelData = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
+      // Si todos los píxeles son transparentes (alpha = 0), el canvas está en blanco
+      for (let i = 3; i < pixelData.length; i += 4) {
+        if (pixelData[i] > 0) return false;
+      }
+      return true;
+    };
+
+    // Limpiar completamente el canvas de dibujos y resetear historial
+    const clearCanvas = () => {
+      clearCanvasRaw();
+      history.value = [];
+      historyIndex.value = -1;
+      saveToHistory();
+      saveStatus.value = 'dirty';
+      saveDrawing(); // Guarda el lienzo limpio y transparente
+    };
+
     return {
       canvas,
-      showGrid,
+      isSvg,
       loadingImage,
       saveStatus,
       historyIndex,
@@ -447,6 +572,9 @@ export default {
       stopDrawing,
       undo,
       saveDrawing,
+      captureCanvasOnly,
+      isCanvasBlank,
+      clearCanvas,
     };
   },
 };
@@ -522,6 +650,37 @@ export default {
 
 .border-golden {
   border: 1px solid rgba(226, 192, 96, 0.2) !important;
+}
+
+.text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0; /* Detrás del canvas de dibujo */
+  color: #1a1a1a;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  user-select: none;
+  pointer-events: none; /* Crucial para dejar interactuar al canvas táctil */
+  text-align: left;
+  padding: 25px; /* Relleno por defecto para texto */
+}
+
+/* Si la capa contiene un elemento SVG, quitamos el padding para que el plano vectorial ocupe el 100% */
+.text-layer:has(svg) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.text-layer :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .bg-surface-variant {
