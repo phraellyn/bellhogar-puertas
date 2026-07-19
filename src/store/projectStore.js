@@ -29,7 +29,10 @@ export const useProjectStore = defineStore('project', {
     error: null,
     config: {
       tiendas: [],
-      vendedores: []
+      vendedores: [],
+      tarimaTipos: [],
+      tarimaAcabados: [],
+      tarimaDesmontajeTipos: []
     }
   }),
 
@@ -166,7 +169,7 @@ export const useProjectStore = defineStore('project', {
     },
 
     // 6. Añadir un formulario específico (Cocina, Puertas, Tarimas) al proyecto actual
-    async addFormToProject(projectId, formType, formName) {
+    async addFormToProject(projectId, formType, formName, formSubtype = null) {
       if (!this.currentProject) return;
       
       const newFormId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
@@ -177,7 +180,7 @@ export const useProjectStore = defineStore('project', {
           encimera: "", cubretuboMelaminico: { ancho: "", alto: "", fondo: "" }, observacionesGenerales: "",
           campana: {
             presupuestar: false, propiedadCliente: false, techo: false, pared: false, isla: false,
-            integrada: false, telescopica: false, filtroCarbon: false,
+            integrada: false, telescopica: false, filtroCarbon: false, enPlaca: false,
             alto: "", ancho: "", fondo: "", diametroSalida: "", observaciones: "", otras: ""
           },
           lavavajillas: {
@@ -194,8 +197,8 @@ export const useProjectStore = defineStore('project', {
           grifo: { presupuestar: false, propiedadCliente: false, enEncimera: false, enPared: false, observaciones: "" },
           preguntas: {
             obraCocina: false, demolerMobiliario: false, deseanComerCocina: false,
-            comerDetalle: { mesa: false, barra: false, personas: "" }, alturaCocina: "", mueblesTecho: false, cierreTecho: false,
-            alturaMueblesSuperiores: "70", alturaMueblesOtros: "", montajeTransporte: false, instalacionAgua: "Termo", instalacionAguaOtros: ""
+            comerDetalle: { mesa: false, barra: false, personas: "" }, alturaCocina: "",
+            instalacionAgua: "Termo", instalacionAguaOtros: ""
           }
         };
       } else if (formType === 'puertas') {
@@ -214,7 +217,7 @@ export const useProjectStore = defineStore('project', {
         };
       } else if (formType === 'tarimas') {
         baseDatos = {
-          modeloTarima: { grosor: "", aislante: "" },
+          modeloTarima: { tipo: "", acabado: "", grosor: "", aislante: "" },
           rodapie: { modelo: "", color: "", alto: "", grosor: "", quitarRodapie: false },
           juntas: {
             transicion: false,
@@ -229,6 +232,7 @@ export const useProjectStore = defineStore('project', {
           bisagras: {
             desmontajeSuelo: false,
             desmontajeSueloUds: "",
+            desmontajeSueloTipo: "",
             picadoSuelo: false,
             picadoSueloM2: "",
             cortePuertas: false,
@@ -249,6 +253,8 @@ export const useProjectStore = defineStore('project', {
             { id: 'l-t-1', zona: '', medida: '', m2: '', ml: '', observaciones: '' }
           ]
         };
+      } else if (formType === 'reforma') {
+        baseDatos = { respuestas: {}, observacionesGenerales: "" };
       } else if (formType === 'varios') {
         baseDatos = {};
       }
@@ -256,6 +262,7 @@ export const useProjectStore = defineStore('project', {
       const newForm = {
         id: newFormId,
         tipo: formType,
+        subtipo: formSubtype,
         nombre: formName || `Nueva ficha de ${formType}`,
         fechaCreacion: new Date().toISOString(),
         dibujos: {
@@ -562,13 +569,17 @@ export const useProjectStore = defineStore('project', {
           const data = docSnap.data();
           this.config = {
             tiendas: data.tiendas || [],
-            vendedores: data.vendedores || []
+            vendedores: data.vendedores || [],
+            tarimaTipos: data.tarimaTipos || [],
+            tarimaAcabados: data.tarimaAcabados || [],
+            tarimaDesmontajeTipos: data.tarimaDesmontajeTipos || []
           };
         } else {
           // Si no existe, inicializar con valores predeterminados
           const defaultVal = {
             tiendas: ['Alcorcón', 'Móstoles', 'Madrid'],
-            vendedores: ['Miguel', 'Carlos', 'David']
+            vendedores: ['Miguel', 'Carlos', 'David'],
+            tarimaTipos: [], tarimaAcabados: [], tarimaDesmontajeTipos: []
           };
           await setDoc(docRef, defaultVal);
           this.config = defaultVal;
@@ -578,7 +589,8 @@ export const useProjectStore = defineStore('project', {
         if (!this.config || !this.config.tiendas || this.config.tiendas.length === 0) {
           this.config = {
             tiendas: ['Alcorcón', 'Móstoles', 'Madrid'],
-            vendedores: ['Miguel', 'Carlos', 'David']
+            vendedores: ['Miguel', 'Carlos', 'David'],
+            tarimaTipos: [], tarimaAcabados: [], tarimaDesmontajeTipos: []
           };
         }
       }
@@ -588,8 +600,8 @@ export const useProjectStore = defineStore('project', {
     async saveConfig(newConfig) {
       try {
         const docRef = doc(db, 'configuracion', 'valores');
-        await setDoc(docRef, newConfig);
-        this.config = newConfig;
+        await setDoc(docRef, newConfig, { merge: true });
+        this.config = { ...this.config, ...newConfig };
       } catch (err) {
         console.error('Error al guardar la configuración:', err);
         throw err;
@@ -677,7 +689,7 @@ function normalizeProject(proj) {
       }));
     }
     if (form.tipo === 'tarimas') {
-      form.datos.modeloTarima = { grosor: "", aislante: "", ...form.datos.modeloTarima };
+      form.datos.modeloTarima = { tipo: "", acabado: "", grosor: "", aislante: "", ...form.datos.modeloTarima };
       form.datos.rodapie = { modelo: "", color: "", alto: "", grosor: "", quitarRodapie: false, ...form.datos.rodapie };
       form.datos.juntas = {
         transicion: false, transicionUds: "",
@@ -687,7 +699,7 @@ function normalizeProject(proj) {
         ...form.datos.juntas
       };
       form.datos.bisagras = {
-        desmontajeSuelo: false, desmontajeSueloUds: "",
+        desmontajeSuelo: false, desmontajeSueloUds: "", desmontajeSueloTipo: "",
         picadoSuelo: false, picadoSueloM2: "",
         cortePuertas: false, cortePuertasUds: "",
         echarSolera: false, echarSoleraM2: "",
@@ -738,6 +750,12 @@ function normalizeProject(proj) {
         ];
       }
     } else if (form.tipo === 'cocina') {
+      form.datos.campana = {
+        presupuestar: false, propiedadCliente: false, techo: false, pared: false, isla: false,
+        integrada: false, telescopica: false, filtroCarbon: false, enPlaca: false,
+        alto: "", ancho: "", fondo: "", diametroSalida: "", observaciones: "", otras: "",
+        ...form.datos.campana
+      };
       if (typeof form.datos.cubretuboMelaminico !== 'object' || form.datos.cubretuboMelaminico === null) {
         form.datos.cubretuboMelaminico = { ancho: "", alto: "", fondo: "" };
       } else {
@@ -746,6 +764,14 @@ function normalizeProject(proj) {
           ...form.datos.cubretuboMelaminico
         };
       }
+    } else if (form.tipo === 'reforma') {
+      if (!['completa', 'cocina', 'bano'].includes(form.subtipo)) form.subtipo = 'completa';
+      form.datos = {
+        respuestas: {},
+        observacionesGenerales: "",
+        ...form.datos,
+        respuestas: typeof form.datos.respuestas === 'object' && form.datos.respuestas !== null ? form.datos.respuestas : {}
+      };
     }
     return form;
   });

@@ -331,7 +331,8 @@
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.isla" label="En isla" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.integrada" label="Integrada" density="compact" hide-details></v-checkbox></v-col>
                     <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.telescopica" label="Telescópica" density="compact" hide-details></v-checkbox></v-col>
-                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.filtroCarbon" label="Filtro carbón" density="compact" hide-details></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.filtroCarbon" label="Filtro carbón" density="compact" hide-details @update:model-value="!$event && (selectedForm.datos.campana.enPlaca = false)"></v-checkbox></v-col>
+                    <v-col cols="12" md="4" class="py-1"><v-checkbox v-model="selectedForm.datos.campana.enPlaca" label="En placa" density="compact" hide-details :disabled="!selectedForm.datos.campana.filtroCarbon"></v-checkbox></v-col>
                   </v-row>
                   <v-row class="mt-2">
                     <v-col cols="4" sm="2" class="py-1"><v-text-field v-model="selectedForm.datos.campana.alto" label="Alto" variant="outlined" density="compact" hide-details></v-text-field></v-col>
@@ -542,46 +543,6 @@
                   <v-text-field v-model="selectedForm.datos.preguntas.alturaCocina" label="Altura" variant="outlined" density="compact" hide-details style="max-width: 200px;"></v-text-field>
                 </v-col>
 
-                <!-- 6. Muebles al techo -->
-                <v-col cols="12" class="py-1 d-flex align-center gap-3">
-                  <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Quiere los muebles al techo?</span>
-                  <v-checkbox v-model="selectedForm.datos.preguntas.mueblesTecho" density="compact" hide-details></v-checkbox>
-                </v-col>
-
-                <!-- 7. Cierre a techo -->
-                <v-col cols="12" class="py-1 d-flex align-center gap-3">
-                  <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Quiere un cierre a techo?</span>
-                  <v-checkbox v-model="selectedForm.datos.preguntas.cierreTecho" density="compact" hide-details></v-checkbox>
-                </v-col>
-
-                <!-- 8. Altura de muebles superiores (con especificar inline) -->
-                <v-col cols="12" class="py-1 d-flex align-center gap-3 flex-wrap">
-                  <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Qué altura de muebles superiores desea?</span>
-                  <v-select
-                    v-model="selectedForm.datos.preguntas.alturaMueblesSuperiores"
-                    :items="['70', '80', '90', '96', 'Otros']"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="max-width: 200px; flex-grow: 1;"
-                  ></v-select>
-                  <v-text-field 
-                    v-if="selectedForm.datos.preguntas.alturaMueblesSuperiores === 'Otros'"
-                    v-model="selectedForm.datos.preguntas.alturaMueblesOtros" 
-                    label="Especificar otra altura" 
-                    variant="outlined" 
-                    density="compact" 
-                    hide-details 
-                    style="max-width: 250px;"
-                  ></v-text-field>
-                </v-col>
-
-                <!-- 9. Montaje y transporte -->
-                <v-col cols="12" class="py-1 d-flex align-center gap-3">
-                  <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Montaje y transporte a domicilio?</span>
-                  <v-checkbox v-model="selectedForm.datos.preguntas.montajeTransporte" density="compact" hide-details></v-checkbox>
-                </v-col>
-
                 <!-- 10. Instalación de agua (con especificar inline) -->
                 <v-col cols="12" class="py-1 d-flex align-center gap-3 flex-wrap">
                   <span class="text-body-2 text-grey-lighten-1" style="min-width: 380px; flex-shrink: 0;">¿Qué instalación de agua/calefacción tiene?</span>
@@ -617,7 +578,7 @@
               
               <!-- 1. ACABADO -->
               <h3 class="text-subtitle-2 font-weight-bold text-primary mb-2 text-uppercase">ACABADO</h3>
-              <v-row class="mb-3 align-center">
+              <v-row class="mb-3 align-start">
                 <v-col cols="6" sm="3" class="py-1">
                   <v-checkbox v-model="selectedForm.datos.acabado.barnizado" label="Barnizado" density="compact" hide-details></v-checkbox>
                 </v-col>
@@ -800,15 +761,41 @@
             <v-card color="secondary" variant="flat" class="pa-4 mb-4" rounded="lg">
               
               <!-- 1. Mod. TARIMA -->
-              <v-row class="mb-3 align-center">
+              <v-row class="mb-3 align-start">
                 <v-col cols="12" sm="3" class="py-1">
                   <span class="text-subtitle-2 font-weight-bold text-primary">Mod. TARIMA:</span>
                 </v-col>
-                <v-col cols="6" sm="4" class="py-1">
-                  <v-text-field v-model="selectedForm.datos.modeloTarima.grosor" label="Grosor" variant="outlined" density="compact" hide-details></v-text-field>
-                </v-col>
-                <v-col cols="6" sm="5" class="py-1">
-                  <v-text-field v-model="selectedForm.datos.modeloTarima.aislante" label="Aislante" variant="outlined" density="compact" hide-details></v-text-field>
+                <v-col cols="12" sm="9" class="py-1">
+                  <v-row>
+                    <v-col cols="12" sm="6" class="py-1">
+                      <v-combobox :key="`tarima-tipos-${tarimaTiposOptions.join('|')}`" v-model="selectedForm.datos.modeloTarima.tipo" label="Tipo" :items="tarimaTiposOptions" variant="outlined" density="compact" hide-details @keydown.enter.prevent="saveTarimaOption('tarimaTipos', selectedForm.datos.modeloTarima.tipo)" @blur="saveTarimaOption('tarimaTipos', selectedForm.datos.modeloTarima.tipo)">
+                        <template #item="{ props, item }">
+                          <v-list-item v-bind="props">
+                            <template #append>
+                              <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" title="Eliminar opción" @mousedown.stop.prevent="deleteTarimaOption('tarimaTipos', item.raw ?? item.value ?? item.title ?? item)" @click.stop></v-btn>
+                            </template>
+                          </v-list-item>
+                        </template>
+                      </v-combobox>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="py-1">
+                      <v-combobox :key="`tarima-acabados-${tarimaAcabadosOptions.join('|')}`" v-model="selectedForm.datos.modeloTarima.acabado" label="Acabado" :items="tarimaAcabadosOptions" variant="outlined" density="compact" hide-details @keydown.enter.prevent="saveTarimaOption('tarimaAcabados', selectedForm.datos.modeloTarima.acabado)" @blur="saveTarimaOption('tarimaAcabados', selectedForm.datos.modeloTarima.acabado)">
+                        <template #item="{ props, item }">
+                          <v-list-item v-bind="props">
+                            <template #append>
+                              <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" title="Eliminar opción" @mousedown.stop.prevent="deleteTarimaOption('tarimaAcabados', item.raw ?? item.value ?? item.title ?? item)" @click.stop></v-btn>
+                            </template>
+                          </v-list-item>
+                        </template>
+                      </v-combobox>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="py-1">
+                      <v-text-field v-model="selectedForm.datos.modeloTarima.grosor" label="Grosor" variant="outlined" density="compact" hide-details></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="py-1">
+                      <v-text-field v-model="selectedForm.datos.modeloTarima.aislante" label="Aislante" variant="outlined" density="compact" hide-details></v-text-field>
+                    </v-col>
+                  </v-row>
                 </v-col>
               </v-row>
 
@@ -897,6 +884,15 @@
                   <span class="text-body-2 text-grey-lighten-1" style="min-width: 180px; flex-shrink: 0;">Desmontaje suelo exist.:</span>
                   <v-checkbox v-model="selectedForm.datos.bisagras.desmontajeSuelo" label="Activar" density="compact" hide-details class="flex-shrink-0"></v-checkbox>
                   <v-text-field v-model="selectedForm.datos.bisagras.desmontajeSueloUds" label="Uds." variant="outlined" density="compact" hide-details style="max-width: 120px;" :disabled="!selectedForm.datos.bisagras.desmontajeSuelo"></v-text-field>
+                  <v-combobox :key="`tarima-desmontaje-tipos-${tarimaDesmontajeTiposOptions.join('|')}`" v-model="selectedForm.datos.bisagras.desmontajeSueloTipo" label="Tipo" :items="tarimaDesmontajeTiposOptions" variant="outlined" density="compact" hide-details class="ml-2" style="max-width: 240px;" :disabled="!selectedForm.datos.bisagras.desmontajeSuelo" @keydown.enter.prevent="saveTarimaOption('tarimaDesmontajeTipos', selectedForm.datos.bisagras.desmontajeSueloTipo)" @blur="saveTarimaOption('tarimaDesmontajeTipos', selectedForm.datos.bisagras.desmontajeSueloTipo)">
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <template #append>
+                          <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" title="Eliminar opción" @mousedown.stop.prevent="deleteTarimaOption('tarimaDesmontajeTipos', item.raw ?? item.value ?? item.title ?? item)" @click.stop></v-btn>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-combobox>
                 </v-col>
 
                 <!-- Picado suelo -->
@@ -942,7 +938,15 @@
                 <!-- Observaciones -->
                 <v-col cols="12" class="py-1 d-flex align-center gap-3">
                   <span class="text-body-2 text-grey-lighten-1" style="min-width: 180px; flex-shrink: 0;">Observaciones:</span>
-                  <v-text-field v-model="selectedForm.datos.bisagras.observaciones" label="Observaciones sección" variant="outlined" density="compact" hide-details style="max-width: 120px;"></v-text-field>
+                  <v-text-field
+                    v-model="selectedForm.datos.bisagras.observaciones"
+                    placeholder="Escribir aquí"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    class="flex-grow-1"
+                    style="min-width: 0;"
+                  ></v-text-field>
                 </v-col>
 
                 <!-- Colocación sobre -->
@@ -981,44 +985,74 @@
 
             <!-- Listado de Suelos -->
             <v-card color="secondary" variant="flat" rounded="lg" class="pa-2 mb-4 overflow-x-auto">
-              <table class="w-100 table-technical">
+              <table class="w-100 table-technical table-tarima-measures">
+                <colgroup>
+                  <col style="width: 16.6667%;">
+                  <col style="width: 16.6667%;">
+                  <col style="width: 8.3333%;">
+                  <col style="width: 8.3333%;">
+                  <col style="width: 50%;">
+                </colgroup>
                 <thead>
                   <tr>
-                    <th style="width: 10%;">Zona</th>
-                    <th style="width: 20%;">Medidas suelos</th>
-                    <th style="width: 65%;">Observaciones</th>
-                    <th style="width: 5%;"></th>
+                    <th>Zona</th>
+                    <th>Medidas</th>
+                    <th class="text-center">ml</th>
+                    <th class="text-center">m²</th>
+                    <th>Observaciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(linea, idx) in selectedForm.datos.lineasTarima" :key="linea.id || idx">
-                    <td><v-text-field v-model="linea.zona" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
                     <td>
-                      <div class="d-flex align-center justify-space-between w-100 pr-2">
-                        <v-text-field 
-                          v-model="linea.medida" 
-                          placeholder="4.20 * 3.50" 
-                          class="table-input flex-grow-1"
-                          variant="plain" 
-                          density="compact" 
-                          hide-details
-                          @input="onMedidaTarimaInput(linea)"
-                        ></v-text-field>
-                        <span v-if="linea.ml" class="text-caption text-grey-lighten-1 ml-2 flex-shrink-0" style="font-size: 0.75rem; font-family: monospace;">
-                          ({{ linea.ml }} ml / {{ linea.m2 }} m²)
-                        </span>
-                      </div>
+                      <v-text-field
+                        v-model="linea.zona"
+                        :placeholder="idx === selectedForm.datos.lineasTarima.length - 1 ? '—' : undefined"
+                        :class="['table-input', { 'tarima-new-row-input': idx === selectedForm.datos.lineasTarima.length - 1 }]"
+                        variant="plain"
+                        density="compact"
+                        hide-details
+                      ></v-text-field>
                     </td>
-                    <td><v-text-field v-model="linea.observaciones" class="table-input" variant="plain" density="compact" hide-details></v-text-field></td>
-                    <td class="text-right">
-                      <v-btn
-                        v-if="idx < selectedForm.datos.lineasTarima.length - 1"
-                        icon="mdi-delete"
-                        size="x-small"
-                        color="error"
-                        variant="text"
-                        @click="deleteTarimaLinea(idx)"
-                      ></v-btn>
+                    <td>
+                      <v-text-field
+                        v-model="linea.medida"
+                        :placeholder="idx === selectedForm.datos.lineasTarima.length - 1 ? '—' : undefined"
+                        :class="['table-input', { 'tarima-new-row-input': idx === selectedForm.datos.lineasTarima.length - 1 }]"
+                        variant="plain"
+                        density="compact"
+                        hide-details
+                        @input="onMedidaTarimaInput(linea)"
+                        @blur="normalizeMedidaTarima(linea)"
+                      ></v-text-field>
+                    </td>
+                    <td class="tarima-calculated-cell">
+                      <span class="tarima-calculated-value">{{ linea.ml || '—' }}</span>
+                    </td>
+                    <td class="tarima-calculated-cell">
+                      <span class="tarima-calculated-value">{{ linea.m2 || '—' }}</span>
+                    </td>
+                    <td>
+                      <div class="tarima-observations-cell">
+                        <v-text-field
+                          v-model="linea.observaciones"
+                          :placeholder="idx === selectedForm.datos.lineasTarima.length - 1 ? '—' : undefined"
+                          :class="['table-input', { 'tarima-new-row-input': idx === selectedForm.datos.lineasTarima.length - 1 }]"
+                          variant="plain"
+                          density="compact"
+                          hide-details
+                        ></v-text-field>
+                        <v-btn
+                          v-if="idx < selectedForm.datos.lineasTarima.length - 1"
+                          icon="mdi-delete"
+                          size="x-small"
+                          color="error"
+                          variant="text"
+                          class="tarima-delete-button"
+                          title="Eliminar línea"
+                          @click="deleteTarimaLinea(idx)"
+                        ></v-btn>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -1028,21 +1062,29 @@
             <!-- Observaciones -->
             <v-textarea v-model="selectedForm.datos.observacionesGenerales" label="Observaciones Generales de Suelos / Tarimas" variant="outlined" rows="3" color="primary"></v-textarea>
           </div>
+
+          <reforma-cuestionario
+            v-else-if="selectedForm.tipo === 'reforma'"
+            v-model="selectedForm.datos"
+            :tipo="selectedForm.subtipo"
+          />
         </v-window-item>
 
         <!-- 2. PESTAÑA ANOTACIONES TÁCTILES -->
         <v-window-item value="notes" :eager="true" class="fill-height pa-1">
           <div class="d-flex flex-column h-100 fill-height">
             <!-- Barra de Dibujo y Navegación Unificada -->
-            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 drawing-toolbar border-golden rounded-lg mb-2 flex-wrap gap-3">
+            <div class="flex-grow-0 flex-shrink-0 drawing-toolbar rounded-lg mb-1">
               <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
-              <div class="d-flex align-center flex-wrap gap-2">
+              <div class="toolbar-group toolbar-group--drawing">
+                <div class="toolbar-group__label" title="Herramientas de dibujo">
+                  <v-icon size="17">mdi-draw</v-icon>
+                </div>
                 <v-btn
                   :variant="activeTool === 'draw' ? 'flat' : 'outlined'"
                   :color="activeTool === 'draw' ? 'primary' : 'white'"
                   icon="mdi-pencil"
                   size="small"
-                  class="mr-2"
                   :class="{ 'border-golden': activeTool !== 'draw' }"
                   @click="activeTool = 'draw'"
                   title="Herramienta Lápiz"
@@ -1052,13 +1094,14 @@
                   :color="activeTool === 'erase' ? 'primary' : 'white'"
                   icon="mdi-eraser"
                   size="small"
-                  class="mr-3"
                   :class="{ 'border-golden': activeTool !== 'erase' }"
                   @click="activeTool = 'erase'"
                   title="Herramienta Borrador"
                 ></v-btn>
 
-                <div class="d-flex align-center mr-2">
+                <div class="toolbar-separator"></div>
+
+                <div class="d-flex align-center">
                   <v-btn-toggle
                     v-model="brushSize"
                     mandatory
@@ -1080,6 +1123,8 @@
                   </v-btn-toggle>
                 </div>
 
+                <div class="toolbar-separator"></div>
+
                 <div class="colors-container">
                   <button
                     v-for="c in colors"
@@ -1096,7 +1141,10 @@
               </div>
 
               <!-- Grupo de Acciones (Deshacer, Borrar) -->
-              <div class="d-flex align-center gap-2">
+              <div class="toolbar-group toolbar-group--actions">
+                <div class="toolbar-group__label" title="Acciones del lienzo">
+                  <v-icon size="17">mdi-tools</v-icon>
+                </div>
                 <v-btn
                   icon="mdi-undo"
                   size="small"
@@ -1123,25 +1171,32 @@
                   @click="showGrid = !showGrid"
                   :title="showGrid ? 'Ocultar cuadrícula de fondo' : 'Mostrar cuadrícula de fondo'"
                 ></v-btn>
+                <div class="toolbar-separator"></div>
                 <v-btn
-                  icon="mdi-brain"
                   size="small"
                   variant="flat"
                   color="primary"
+                  class="toolbar-ai-action"
                   @click="transcribeActivePage"
                   :loading="transcribing"
-                  title="Digitalizar anotaciones con IA (gemini-2.5-flash)"
-                ></v-btn>
+                  title="Digitalizar anotaciones con IA (Gemini 3.1 Flash Lite)"
+                >
+                  <v-icon size="19">mdi-brain</v-icon>
+                  <span class="toolbar-ai-action__text">Digitalizar</span>
+                </v-btn>
                 <span
                   v-if="transcribingStatus && activeTab === 'notes'"
-                  class="text-caption text-primary font-weight-medium animate-pulse ml-1"
+                  class="toolbar-status text-caption text-primary font-weight-medium animate-pulse"
                 >
                   {{ transcribingStatus }}
                 </span>
               </div>
 
               <!-- Grupo de Navegación de Páginas -->
-              <div class="d-flex align-center gap-2">
+              <div class="toolbar-group toolbar-group--pages">
+                <div class="toolbar-group__label" title="Navegación de páginas">
+                  <v-icon size="17">mdi-file-multiple-outline</v-icon>
+                </div>
                 <v-btn
                   icon="mdi-chevron-left"
                   size="small"
@@ -1152,8 +1207,8 @@
                   title="Página anterior"
                 ></v-btn>
 
-                <span class="text-body-2 font-weight-bold toolbar-text px-1">
-                  <template v-if="isTwoPageLayout">
+                <span class="text-body-2 font-weight-bold toolbar-text toolbar-page-indicator">
+                  <template v-if="isNotesTwoPageLayout">
                     {{ notesLeftPageIndex + 1 }}-{{ Math.min(notesRightPageIndex + 1, notesTotalPages) }}/{{ notesTotalPages }}
                   </template>
                   <template v-else>
@@ -1170,6 +1225,8 @@
                   @click="nextNotesPage"
                   title="Página siguiente"
                 ></v-btn>
+
+                <div class="toolbar-separator"></div>
 
                 <v-btn
                   icon="mdi-plus-box"
@@ -1193,11 +1250,15 @@
             </div>
 
             <!-- Área de Canvases -->
-            <div class="flex-grow-1 flex-shrink-1 d-flex gap-4 overflow-hidden" style="min-height: 0;">
+            <div
+              class="notes-canvas-scroll flex-grow-1 flex-shrink-1 d-flex gap-4"
+              :class="{ 'notes-canvas-scroll--single': !isNotesTwoPageLayout }"
+            >
               <!-- Canvas Izquierda -->
               <div
                 v-if="notesLeftPage"
-                class="fill-height d-flex flex-column position-relative"
+                class="notes-page-shell d-flex flex-column position-relative"
+                :class="{ 'fill-height': isNotesTwoPageLayout, 'notes-page-shell--single': !isNotesTwoPageLayout }"
                 style="flex: 1; min-width: 0; cursor: pointer;"
                 @pointerdown="activeNotesPageId = notesLeftPage.id"
               >
@@ -1218,6 +1279,7 @@
                   :brush-size="brushSize"
                   :brush-color="brushColor"
                   :show-grid="showGrid"
+                  :fit-width="!isNotesTwoPageLayout"
                   @save="onCanvasSave"
                   @focus="activeNotesPageId = $event"
                   :style="{
@@ -1228,7 +1290,7 @@
               </div>
 
               <!-- Canvas Derecha (Solo en Two Page Layout) -->
-              <div v-if="isTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
+              <div v-if="isNotesTwoPageLayout" class="fill-height d-flex flex-column position-relative" style="flex: 1; min-width: 0;">
                 <template v-if="notesRightPage">
                   <div
                     class="fill-height d-flex flex-column position-relative"
@@ -1292,15 +1354,17 @@
         <v-window-item value="sketch" :eager="true" class="fill-height pa-1">
           <div class="d-flex flex-column h-100 fill-height">
             <!-- Barra de Dibujo y Navegación Unificada -->
-            <div class="flex-grow-0 flex-shrink-0 d-flex align-center justify-space-between py-2 px-3 drawing-toolbar border-golden rounded-lg mb-2 flex-wrap gap-3">
+            <div class="flex-grow-0 flex-shrink-0 drawing-toolbar rounded-lg mb-1">
               <!-- Grupo de Herramientas (Lápiz, Goma, Grosor, Colores) -->
-              <div class="d-flex align-center flex-wrap gap-2">
+              <div class="toolbar-group toolbar-group--drawing">
+                <div class="toolbar-group__label" title="Herramientas de dibujo">
+                  <v-icon size="17">mdi-draw</v-icon>
+                </div>
                 <v-btn
                   :variant="activeTool === 'draw' ? 'flat' : 'outlined'"
                   :color="activeTool === 'draw' ? 'primary' : 'white'"
                   icon="mdi-pencil"
                   size="small"
-                  class="mr-2"
                   :class="{ 'border-golden': activeTool !== 'draw' }"
                   @click="activeTool = 'draw'"
                   title="Herramienta Lápiz"
@@ -1310,13 +1374,14 @@
                   :color="activeTool === 'erase' ? 'primary' : 'white'"
                   icon="mdi-eraser"
                   size="small"
-                  class="mr-3"
                   :class="{ 'border-golden': activeTool !== 'erase' }"
                   @click="activeTool = 'erase'"
                   title="Herramienta Borrador"
                 ></v-btn>
 
-                <div class="d-flex align-center mr-2">
+                <div class="toolbar-separator"></div>
+
+                <div class="d-flex align-center">
                   <v-btn-toggle
                     v-model="brushSize"
                     mandatory
@@ -1338,6 +1403,8 @@
                   </v-btn-toggle>
                 </div>
 
+                <div class="toolbar-separator"></div>
+
                 <div class="colors-container">
                   <button
                     v-for="c in colors"
@@ -1354,7 +1421,10 @@
               </div>
 
               <!-- Grupo de Acciones (Deshacer, Borrar) -->
-              <div class="d-flex align-center gap-2">
+              <div class="toolbar-group toolbar-group--actions">
+                <div class="toolbar-group__label" title="Acciones del lienzo">
+                  <v-icon size="17">mdi-tools</v-icon>
+                </div>
                 <v-btn
                   icon="mdi-undo"
                   size="small"
@@ -1373,33 +1443,40 @@
                   title="Limpiar lienzo"
                 ></v-btn>
                 <v-btn
-                  :icon="showGrid ? 'mdi-grid' : 'mdi-grid-off'"
+                  :icon="activeSketchGridVisible ? 'mdi-grid' : 'mdi-grid-off'"
                   size="small"
                   variant="outlined"
-                  :color="showGrid ? 'primary' : 'white'"
+                  :color="activeSketchGridVisible ? 'primary' : 'white'"
                   class="border-golden"
-                  @click="showGrid = !showGrid"
-                  :title="showGrid ? 'Ocultar cuadrícula de fondo' : 'Mostrar cuadrícula de fondo'"
+                  @click="toggleActiveSketchGrid"
+                  :title="activeSketchGridVisible ? 'Ocultar cuadrícula de esta hoja' : 'Mostrar cuadrícula de esta hoja'"
                 ></v-btn>
+                <div class="toolbar-separator"></div>
                 <v-btn
-                  icon="mdi-brain"
                   size="small"
                   variant="flat"
                   color="primary"
+                  class="toolbar-ai-action"
                   @click="transcribeActivePage"
                   :loading="transcribing"
                   title="Generar plano SVG con IA (gemini-3.5-flash)"
-                ></v-btn>
+                >
+                  <v-icon size="19">mdi-brain</v-icon>
+                  <span class="toolbar-ai-action__text">Generar plano</span>
+                </v-btn>
                 <span
                   v-if="transcribingStatus && activeTab === 'sketch'"
-                  class="text-caption text-primary font-weight-medium animate-pulse ml-1"
+                  class="toolbar-status text-caption text-primary font-weight-medium animate-pulse"
                 >
                   {{ transcribingStatus }}
                 </span>
               </div>
 
               <!-- Grupo de Navegación de Páginas -->
-              <div class="d-flex align-center gap-2">
+              <div class="toolbar-group toolbar-group--pages">
+                <div class="toolbar-group__label" title="Navegación de páginas">
+                  <v-icon size="17">mdi-file-multiple-outline</v-icon>
+                </div>
                 <v-btn
                   icon="mdi-chevron-left"
                   size="small"
@@ -1410,7 +1487,7 @@
                   title="Página anterior"
                 ></v-btn>
 
-                 <span class="text-body-2 font-weight-bold toolbar-text px-1">
+                <span class="text-body-2 font-weight-bold toolbar-text toolbar-page-indicator">
                   <template v-if="isTwoPageLayout">
                     {{ sketchLeftPageIndex + 1 }}-{{ Math.min(sketchRightPageIndex + 1, sketchTotalPages) }}/{{ sketchTotalPages }}
                   </template>
@@ -1428,6 +1505,8 @@
                   @click="nextSketchPage"
                   title="Página siguiente"
                 ></v-btn>
+
+                <div class="toolbar-separator"></div>
 
                 <v-btn
                   icon="mdi-plus-box"
@@ -1475,7 +1554,7 @@
                   :active-tool="activeTool"
                   :brush-size="brushSize"
                   :brush-color="brushColor"
-                  :show-grid="showGrid"
+                  :show-grid="isSketchGridVisible(sketchLeftPage.id)"
                   @save="onCanvasSave"
                   @focus="activeSketchPageId = $event"
                   :style="{
@@ -1509,7 +1588,7 @@
                       :active-tool="activeTool"
                       :brush-size="brushSize"
                       :brush-color="brushColor"
-                      :show-grid="showGrid"
+                      :show-grid="isSketchGridVisible(sketchRightPage.id)"
                       @save="onCanvasSave"
                       @focus="activeSketchPageId = $event"
                       :style="{
@@ -1575,10 +1654,26 @@
                 { title: 'Puertas', value: 'puertas' },
                 { title: 'Tarima', value: 'tarimas' },
                 { title: 'Cocina', value: 'cocina' },
+                { title: 'Reforma', value: 'reforma' },
                 { title: 'Otros', value: 'varios' }
               ]"
               variant="outlined"
               :rules="[v => !!v || 'Debes seleccionar un tipo']"
+              color="primary"
+              class="mb-4"
+            ></v-select>
+
+            <v-select
+              v-if="newFormType === 'reforma'"
+              v-model="newReformaType"
+              label="Tipo de reforma *"
+              :items="[
+                { title: 'Vivienda completa', value: 'completa' },
+                { title: 'Cocina', value: 'cocina' },
+                { title: 'Baño', value: 'bano' }
+              ]"
+              variant="outlined"
+              :rules="[v => newFormType !== 'reforma' || !!v || 'Debes seleccionar el tipo de reforma']"
               color="primary"
               class="mb-4"
             ></v-select>
@@ -1659,6 +1754,7 @@ import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProjectStore } from '../store/projectStore';
 import SketchCanvas from '../components/SketchCanvas.vue';
 import FileUploader from '../components/FileUploader.vue';
+import ReformaCuestionario from '../components/ReformaCuestionario.vue';
 import { generateProjectPDF, uploadPDFToStorage, sendSummaryEmail } from '../services/emailService';
 import { functions } from '../services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -1668,6 +1764,7 @@ export default {
   components: {
     SketchCanvas,
     FileUploader,
+    ReformaCuestionario,
   },
   setup() {
     const route = useRoute();
@@ -1705,6 +1802,10 @@ export default {
       // Dos páginas sólo si es landscape y el ancho es de tablet o superior (w >= 768)
       return w >= 768 && w > h;
     });
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    // En tablet, Anotaciones usa una sola hoja a ancho completo y desplazable.
+    // El boceto mantiene su comportamiento existente de una/dos hojas.
+    const isNotesTwoPageLayout = computed(() => isTwoPageLayout.value && !isTouchDevice);
 
     // Herramientas de Dibujo Compartidas
     const activeTool = ref('draw'); // 'draw' | 'erase'
@@ -1734,6 +1835,7 @@ export default {
     const addFormDialog = ref(false);
     const addFormValid = ref(false);
     const newFormType = ref('cocina');
+    const newReformaType = ref('completa');
     const newFormName = ref('');
 
     // Diálogo de Email
@@ -1784,6 +1886,67 @@ export default {
       return list;
     });
 
+    const tarimaOptions = (configKey) => {
+      return [...(projectStore.config?.[configKey] || [])]
+        .sort((a, b) => a.localeCompare(b, 'es'));
+    };
+
+    const tarimaTiposOptions = computed(() => tarimaOptions('tarimaTipos'));
+    const tarimaAcabadosOptions = computed(() => tarimaOptions('tarimaAcabados'));
+    const tarimaDesmontajeTiposOptions = computed(() => tarimaOptions('tarimaDesmontajeTipos'));
+
+    const saveTarimaOption = async (configKey, value) => {
+      const option = typeof value === 'string' ? value.trim() : '';
+      if (!option) return;
+
+      const currentOptions = projectStore.config?.[configKey] || [];
+      if (currentOptions.some(existing => existing.toLocaleLowerCase() === option.toLocaleLowerCase())) return;
+
+      try {
+        await projectStore.saveConfig({ [configKey]: [...currentOptions, option] });
+      } catch (err) {
+        console.error('Error al guardar una opción de tarima:', err);
+      }
+    };
+
+    const deleteTarimaOption = async (configKey, value) => {
+      const option = typeof value === 'string'
+        ? value
+        : (value?.raw ?? value?.value ?? value?.title ?? '');
+      if (!option) return;
+
+      const currentOptions = projectStore.config?.[configKey] || [];
+      const nextOptions = currentOptions.filter(existing => existing.toLocaleLowerCase() !== option.toLocaleLowerCase());
+      if (nextOptions.length === currentOptions.length) return;
+
+      const selectedValuePaths = {
+        tarimaTipos: ['modeloTarima', 'tipo'],
+        tarimaAcabados: ['modeloTarima', 'acabado'],
+        tarimaDesmontajeTipos: ['bisagras', 'desmontajeSueloTipo']
+      };
+      const selectedValuePath = selectedValuePaths[configKey];
+      const selectedSection = selectedValuePath && selectedForm.value?.datos?.[selectedValuePath[0]];
+      const selectedValue = selectedSection?.[selectedValuePath?.[1]];
+      const clearsSelectedValue = typeof selectedValue === 'string'
+        && selectedValue.toLocaleLowerCase() === option.toLocaleLowerCase();
+      const previousConfig = projectStore.config;
+
+      projectStore.config = { ...previousConfig, [configKey]: nextOptions };
+      if (clearsSelectedValue) {
+        selectedSection[selectedValuePath[1]] = '';
+      }
+
+      try {
+        await projectStore.saveConfig({ [configKey]: nextOptions });
+      } catch (err) {
+        projectStore.config = previousConfig;
+        if (clearsSelectedValue) {
+          selectedSection[selectedValuePath[1]] = selectedValue;
+        }
+        console.error('Error al eliminar una opción de tarima:', err);
+      }
+    };
+
     // Estancia seleccionada
     const selectedForm = computed(() => {
       if (!project.value || !selectedFormId.value) return null;
@@ -1794,7 +1957,7 @@ export default {
     const notesPages = computed(() => selectedForm.value?.dibujos?.anotacionesPages || []);
     const notesTotalPages = computed(() => notesPages.value.length);
     const notesLeftPageIndex = computed(() => {
-      return isTwoPageLayout.value ? Math.floor(currentNotesPageIndex.value / 2) * 2 : currentNotesPageIndex.value;
+      return isNotesTwoPageLayout.value ? Math.floor(currentNotesPageIndex.value / 2) * 2 : currentNotesPageIndex.value;
     });
     const notesRightPageIndex = computed(() => notesLeftPageIndex.value + 1);
     
@@ -1825,7 +1988,7 @@ export default {
     });
 
     // Sincronizar foco de página activa según listado y visibilidad
-    watch([notesLeftPage, notesRightPage, isTwoPageLayout, notesPages], ([left, right, twoPage, pages]) => {
+    watch([notesLeftPage, notesRightPage, isNotesTwoPageLayout, notesPages], ([left, right, twoPage, pages]) => {
       if (!left) {
         activeNotesPageId.value = null;
         return;
@@ -1881,6 +2044,7 @@ export default {
         case 'cocina': return 'mdi-chef-hat';
         case 'puertas': return 'mdi-door-closed';
         case 'tarimas': return 'mdi-layers-triple';
+        case 'reforma': return 'mdi-hammer-wrench';
         case 'varios': return 'mdi-folder-text-outline';
         default: return 'mdi-file-document';
       }
@@ -1891,6 +2055,7 @@ export default {
         case 'cocina': return 'orange';
         case 'puertas': return 'primary';
         case 'tarimas': return 'success';
+        case 'reforma': return 'warning';
         case 'varios': return 'purple';
         default: return 'white';
       }
@@ -1901,6 +2066,7 @@ export default {
         case 'cocina': return 'Cocina';
         case 'puertas': return 'Puertas';
         case 'tarimas': return 'Tarimas';
+        case 'reforma': return 'Reforma';
         case 'varios': return 'Varios';
         default: return 'Ficha';
       }
@@ -1936,6 +2102,7 @@ export default {
     // 2. Diálogo Añadir Estancia
     const openAddFormDialog = () => {
       newFormType.value = 'cocina';
+      newReformaType.value = 'completa';
       newFormName.value = '';
       addFormDialog.value = true;
     };
@@ -1946,7 +2113,8 @@ export default {
           const newId = await projectStore.addFormToProject(
             projectId,
             newFormType.value,
-            newFormName.value
+            newFormName.value,
+            newFormType.value === 'reforma' ? newReformaType.value : null
           );
           addFormDialog.value = false;
           // Seleccionar la estancia recién creada
@@ -2145,6 +2313,24 @@ export default {
       }
     };
 
+    const tarimaRectanglePattern = /^\s*([0-9]+(?:[\.,][0-9]+)?)\s*[xX*×]\s*([0-9]+(?:[\.,][0-9]+)?)\s*$/;
+
+    const normalizeMedidaTarima = (linea) => {
+      if (!linea.medida) return;
+      const match = linea.medida.match(tarimaRectanglePattern);
+      if (!match) return;
+
+      const formatDimension = (rawValue) => {
+        const numericValue = Number(rawValue.replace(',', '.'));
+        return Number.isFinite(numericValue)
+          ? numericValue.toString().replace('.', ',')
+          : rawValue.replace('.', ',');
+      };
+
+      linea.medida = `${formatDimension(match[1])} x ${formatDimension(match[2])}`;
+      onMedidaTarimaInput(linea);
+    };
+
     // Función segura para analizar y calcular la expresión matemática escrita de medidas
     const onMedidaTarimaInput = (linea) => {
       if (!linea.medida) {
@@ -2154,7 +2340,7 @@ export default {
       }
       try {
         // Intentar detectar formato rectángulo: "3.5*4.7", "3,5*4.7", "3.5x4.7", "3,5x4,7"
-        const match = linea.medida.match(/^\s*([0-9]+(?:[\.,][0-9]+)?)\s*[xX*]\s*([0-9]+(?:[\.,][0-9]+)?)\s*$/);
+        const match = linea.medida.match(tarimaRectanglePattern);
         if (match) {
           const a = parseFloat(match[1].replace(',', '.'));
           const b = parseFloat(match[2].replace(',', '.'));
@@ -2169,7 +2355,7 @@ export default {
         }
 
         // Si no es un rectángulo exacto, calcular m2 como expresión general y limpiar ml
-        let expr = linea.medida.toLowerCase().replace(/,/g, '.').replace(/x/g, '*');
+        let expr = linea.medida.toLowerCase().replace(/,/g, '.').replace(/[x×]/g, '*');
         expr = expr.replace(/[^0-9+\-*\/.\(\) ]/g, ''); // Permitir números y operadores básicos
         const result = new Function(`return ${expr}`)();
         if (typeof result === 'number' && !isNaN(result)) {
@@ -2202,6 +2388,81 @@ export default {
     const transcribing = ref(false);
     const transcribingStatus = ref(''); // Mensaje descriptivo del estado actual
     const showGrid = ref(true); // Toggle para mostrar/ocultar cuadrícula de fondo
+    const sketchGridVisibility = ref({});
+    // La rejilla del boceto parte desactivada: mejora notablemente la fluidez
+    // en tablet y puede activarse individualmente en cualquier hoja.
+    const isSketchGridVisible = (pageId) => pageId ? sketchGridVisibility.value[pageId] === true : false;
+    const activeSketchGridVisible = computed(() => isSketchGridVisible(activeSketchPageId.value || sketchLeftPage.value?.id));
+    const toggleActiveSketchGrid = () => {
+      const pageId = activeSketchPageId.value || sketchLeftPage.value?.id;
+      if (!pageId) return;
+      sketchGridVisibility.value = {
+        ...sketchGridVisibility.value,
+        [pageId]: !isSketchGridVisible(pageId)
+      };
+    };
+
+    const extractAndSanitizeSvg = (rawResponse) => {
+      if (typeof rawResponse !== 'string') {
+        throw new Error('La IA no devolvió texto SVG.');
+      }
+
+      const svgStart = rawResponse.indexOf('<svg');
+      const svgEnd = rawResponse.lastIndexOf('</svg>');
+      if (svgStart < 0 || svgEnd < svgStart) {
+        throw new Error('La respuesta de la IA está incompleta y no contiene un SVG cerrado. El boceto original se ha conservado.');
+      }
+
+      const svgSource = rawResponse.slice(svgStart, svgEnd + 6);
+      if (svgSource.length > 250000) {
+        throw new Error('El SVG generado es demasiado grande para mostrarse de forma segura.');
+      }
+
+      const parsed = new DOMParser().parseFromString(svgSource, 'image/svg+xml');
+      if (parsed.querySelector('parsererror') || parsed.documentElement.localName.toLowerCase() !== 'svg') {
+        throw new Error('La IA devolvió un SVG mal formado. El boceto original se ha conservado.');
+      }
+
+      const allowedElements = new Set([
+        'svg', 'g', 'defs', 'marker', 'path', 'rect', 'line', 'polyline',
+        'polygon', 'circle', 'ellipse', 'text', 'tspan', 'title', 'desc'
+      ]);
+
+      [...parsed.querySelectorAll('*')].forEach((element) => {
+        const tagName = element.localName.toLowerCase();
+        if (!allowedElements.has(tagName)) {
+          element.remove();
+          return;
+        }
+
+        [...element.attributes].forEach((attribute) => {
+          const name = attribute.name.toLowerCase();
+          const value = attribute.value.trim().toLowerCase();
+          const isUnsafeLink = (name === 'href' || name.endsWith(':href')) && !value.startsWith('#');
+          const isUnsafeStyle = name === 'style' && (value.includes('javascript:') || /url\((?!['"]?#)/i.test(value));
+          const isUnsafeUrl = value.includes('url(') && /url\((?!['"]?#)/i.test(value);
+          if (name.startsWith('on') || isUnsafeLink || isUnsafeStyle || isUnsafeUrl) {
+            element.removeAttribute(attribute.name);
+          }
+        });
+      });
+
+      const root = parsed.documentElement;
+      root.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      root.setAttribute('width', '100%');
+      root.setAttribute('height', '100%');
+      root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      if (!root.hasAttribute('viewBox')) {
+        root.setAttribute('viewBox', '0 0 1200 900');
+      }
+
+      const geometryCount = root.querySelectorAll('path, rect, line, polyline, polygon, circle, ellipse').length;
+      if (!geometryCount) {
+        throw new Error('La IA no ha generado geometría de plano utilizable. El boceto original se ha conservado.');
+      }
+
+      return new XMLSerializer().serializeToString(root);
+    };
 
     const transcribeActivePage = async () => {
       if (!project.value || !selectedForm.value) return;
@@ -2249,7 +2510,7 @@ export default {
 
         // ════════════════════════════════════════════════════════════
         // MODO ANOTACIONES
-        // Modelo: google/gemini-2.5-flash — OCR rápido y económico (~2-4s)
+        // Modelo: Gemini 3.1 Flash Lite con respaldo multimodelo.
         // ════════════════════════════════════════════════════════════
         if (activeTab.value === 'notes') {
           transcribingStatus.value = 'Reconociendo texto manuscrito...';
@@ -2291,7 +2552,13 @@ Genera la lista final consolidada siguiendo estas reglas estrictas.`;
             prompt,
             systemPrompt,
             imageBase64,
-            model: 'google/gemini-2.5-flash'
+            model: 'google/gemini-3.1-flash-lite',
+            fallbackModels: ['google/gemini-3.5-flash', 'google/gemini-2.5-flash'],
+            maxTokens: 2200,
+            temperature: 0.1,
+            reasoningEffort: 'minimal',
+            optimizeForSpeed: true,
+            requestTimeoutMs: 120000
           });
 
         } else if (activeTab.value === 'sketch') {
@@ -2299,53 +2566,59 @@ Genera la lista final consolidada siguiendo estas reglas estrictas.`;
 
           const hasSvgAnterior = textoAnterior.trim().startsWith('<svg');
 
-          const systemPrompt = `Eres un arquitecto de obra y delineante CAD experto. Tu trabajo es convertir croquis a mano alzada en planos de planta técnicos profesionales en formato SVG.
+          const systemPrompt = `Eres un delineante CAD especializado en convertir croquis de obra en planos de planta SVG claros y editables.
 
-La imagen que recibes muestra:
-- De fondo (si existe): el plano SVG digitalizado previamente (trazados vectoriales negros).
-- En primer plano: los trazos nuevos dibujados a mano con lápiz (paredes adicionales, anotaciones de medidas, mobiliario).
+SALIDA OBLIGATORIA:
+1. Devuelve solamente un SVG completo: empieza por <svg y termina por </svg>. No uses Markdown ni añadas explicaciones.
+2. Usa exactamente una raíz con width="100%", height="100%", viewBox="0 0 1200 900", preserveAspectRatio="xMidYMid meet" y xmlns="http://www.w3.org/2000/svg".
+3. Fondo transparente. No incluyas scripts, estilos CSS, foreignObject, imágenes, enlaces, recursos externos, animaciones ni elementos SVG anidados.
+4. Usa solo: g, defs, marker, path, rect, line, polyline, polygon, circle, ellipse, text y tspan.
 
-REGLAS DE SALIDA Y GEOMETRÍA (ESTRICTAS):
-1. RESPUESTA: Devuelve EXCLUSIVAMENTE el código SVG válido, comenzando con "<svg" y terminando con "</svg>". Sin bloques markdown (como \`\`\`xml o \`\`\`svg), sin saludos, sin preámbulos, y sin texto explicativo. Solo código fuente SVG listo para inyectarse directamente.
-2. TRAZO NEGRO / GRIS OSCURO: Todo el plano (muros, ventanas, puertas, cotas, textos) debe dibujarse con trazos y rellenos en negro (#1a1a1a) o gris muy oscuro. No uses otros colores.
-3. MUROS/PAREDES: Represéntalos como líneas gruesas rectas o rectángulos cerrados negros (stroke-width="10" o stroke-width="12") formando ángulos perfectos de 90° (geometría limpia y regularizada).
-4. MEDIDAS Y COTAS COMPLETAS ("SLOPED"):
-   - Identifica todas las cotas numéricas escritas a mano (ej: "3.50", "2.10", "80").
-   - INFERENCIA OBLIGATORIA: Como el usuario solo escribirá a mano algunas medidas principales, debes INFERIR y CALCULAR geométricamente la longitud de todas las demás líneas, paredes, puertas o vanos que falten. El plano final debe quedar 100% acotado en todas sus paredes y vanos.
-   - ROTACIÓN PARALELA ("SLOPED ANNOTATIONS"): El texto de la cifra de medida debe estar alineado y paralelo a su línea de cota y pared correspondiente, girado en el rango de 0 a 90 grados para que sea legible.
-     * Para paredes horizontales: texto horizontal (sin rotación, 0 grados).
-     * Para paredes verticales: rota el texto exactamente 90 grados (paralelo a la cota vertical) usando transform="rotate(-90, x, y)" en el punto medio. El texto debe leerse cómodamente desde la derecha.
-     * Para paredes diagonales: calcula el ángulo de inclinación de la línea y aplica transform="rotate(angulo, x, y)" para que el texto de la cota quede paralelo al segmento en un rango legible de lectura (0° a 90°).
-     * Dibuja siempre la línea de cota fina en negro (stroke-width="1.5") con sus marcas cruzadas en los extremos antes de poner el texto.
-5. PUERTAS: Dibuja la hoja de la puerta abierta en un ángulo de 90° y su arco de swing de apertura con una línea fina discontinua (stroke-width="1.5" stroke-dasharray="4,4").
-6. VENTANAS: Represéntalas como dos líneas finas paralelas dentro del muro (para denotar vidrio).
-7. VIEWBOX Y CENTRADO DE GEOMETRÍA (CRÍTICO):
-   - El plano completo (muros + cotas + textos de medida) debe estar perfectamente CENTRADO matemáticamente en el área de coordenadas del viewBox.
-   - Evita espacios vacíos asimétricos o desviar el plano hacia abajo o hacia la derecha.
-   - Margen uniforme: Calcula el rectángulo delimitador (bounding box) real exacto de toda la geometría y textos del plano, y establece el viewBox de la etiqueta <svg> (ej: viewBox="X_MIN Y_MIN ANCHO ALTO") restando un margen limpio y uniforme de al menos 90px a 110px a los lados para que nada desborde ni se corte en los extremos.
-   - Declaración de etiqueta SVG: El tag raíz debe ser <svg width="100%" height="100%" viewBox="..." preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"> para asegurar un centrado responsive perfecto en el navegador.
-8. FONDO: El SVG debe tener fondo transparente (sin rectángulos de fondo blanco).`;
+INTERPRETACIÓN DEL CROQUIS:
+- La imagen recortada es la fuente principal. Conserva la topología: número de estancias, uniones, huecos y orientación relativa.
+- Regulariza como horizontales/verticales solo los trazos cuya intención sea clara. Mantén diagonales reales.
+- Muros: stroke="#1a1a1a", fill="none", stroke-width entre 10 y 14, linecap="square" y linejoin="miter".
+- Puertas: hueco, hoja abierta y arco de giro fino. Ventanas: dos líneas finas paralelas dentro del muro.
+- Organiza el resultado en grupos con id="walls", id="openings", id="dimensions" e id="labels".
+
+COTAS Y TEXTO:
+- Copia literalmente todas las cifras y unidades que sean legibles. No cambies comas por puntos ni inventes unidades.
+- Nunca inventes una medida. Solo puedes calcular una cifra ausente si se deduce aritméticamente de otras cotas visibles sin ambigüedad; en ese caso antepón el símbolo ≈.
+- Las líneas de cota deben ser finas, separadas de los muros y con marcas en los extremos.
+- Texto horizontal para paredes horizontales; rotate(-90 x y) para verticales; paralelo al segmento para diagonales. Usa font-family="Arial, sans-serif" y font-size entre 18 y 24.
+
+COMPOSICIÓN:
+- Coloca toda la geometría, cotas y textos dentro de x=70..1130 e y=70..830, centrados y con margen uniforme.
+- Nada debe quedar cortado ni fuera del viewBox.
+- Si existe un SVG anterior, conserva sus elementos correctos y aplica solamente los cambios nuevos que sean inequívocos en la imagen.`;
 
           let prompt;
           if (hasSvgAnterior) {
+            const previousSvgContext = textoAnterior.length <= 18000
+              ? textoAnterior
+              : `${textoAnterior.slice(0, 12000)}\n<!-- PARTE CENTRAL OMITIDA -->\n${textoAnterior.slice(-6000)}`;
             prompt = `El técnico ha añadido nuevos trazos a lápiz sobre el plano SVG anterior.
-A continuación tienes el código del plano SVG anterior como referencia textual:
+A continuación tienes el SVG anterior como referencia estructural:
 ---
-${textoAnterior.substring(0, 7000)}
+${previousSvgContext}
 ---
 
-Compara esta estructura con la imagen (que tiene este mismo plano de fondo y los trazos de lápiz nuevos encima).
-Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en sus cifras, y perfectamente centrado. Conserva la coherencia del plano anterior y responde únicamente con el código SVG.`;
+La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría previa salvo donde los nuevos trazos indiquen claramente una modificación. Incorpora cotas legibles sin inventar valores y devuelve solo el SVG actualizado.`;
           } else {
-            prompt = `Genera un plano técnico SVG completo, regularizado, 100% acotado con cifras paralelas (sloped) a sus respectivas paredes y perfectamente centrado a partir de este boceto a mano alzada. Responde únicamente con el código SVG.`;
+            prompt = `Convierte el croquis de la imagen en un plano de planta SVG profesional. Respeta su forma y conexiones, regulariza los trazos claros, reproduce literalmente las cotas legibles y no inventes medidas. Devuelve solamente el SVG completo.`;
           }
 
           result = await askAICallable({
             prompt,
             systemPrompt,
             imageBase64,
-            model: 'google/gemini-2.5-pro',
-            maxTokens: 8000
+            model: 'google/gemini-3.5-flash',
+            fallbackModels: ['google/gemini-3-pro-preview', 'google/gemini-2.5-pro'],
+            maxTokens: 9000,
+            temperature: 0.1,
+            reasoningEffort: 'medium',
+            optimizeForSpeed: true,
+            requestTimeoutMs: 180000
           });
         }
 
@@ -2355,29 +2628,21 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
 
         let newText = result.data?.text || '';
         console.log('[IA] Modelo usado:', result.data?.modelUsed);
+        console.log('[IA] Motivo de finalización:', result.data?.finishReason);
         console.log('[IA] Respuesta (primeros 500 chars):', newText.substring(0, 500));
 
-        // ─── Limpiar bloques markdown si la IA los incluyó por error ───
-        const mdPatterns = ['```xml', '```html', '```svg', '```'];
-        for (const pattern of mdPatterns) {
-          if (newText.includes(pattern)) {
-            const parts = newText.split(pattern);
-            if (parts.length >= 3) {
-              newText = parts[1].split('```')[0].trim();
-            } else if (parts.length === 2) {
-              newText = parts[1].replace(/```$/, '').trim();
-            }
-            break;
+        if (activeTab.value === 'sketch') {
+          if (['length', 'max_tokens'].includes(result.data?.finishReason)) {
+            throw new Error('La respuesta SVG quedó truncada por el modelo. El boceto original se ha conservado; vuelve a intentarlo.');
           }
-        }
-
-        // Para boceto: asegurarse de que empieza con <svg
-        if (activeTab.value === 'sketch' && newText && !newText.trim().startsWith('<svg')) {
-          const svgStart = newText.indexOf('<svg');
-          if (svgStart > -1) {
-            newText = newText.substring(svgStart);
-            const svgEnd = newText.lastIndexOf('</svg>');
-            if (svgEnd > -1) newText = newText.substring(0, svgEnd + 6);
+          newText = extractAndSanitizeSvg(newText);
+        } else {
+          newText = newText
+            .replace(/^```(?:text|txt|markdown)?\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+          if (!newText) {
+            throw new Error('La IA no devolvió ninguna anotación utilizable.');
           }
         }
 
@@ -2397,7 +2662,7 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
         console.error('[IA] Error al transcribir:', err);
         transcribingStatus.value = '';
         const msg = err?.message || 'Error desconocido';
-        alert(`Error al procesar con IA:\n${msg}\n\nComprueba que la API Key de OpenRouter está configurada y el modelo está disponible.`);
+        alert(`Error al procesar con IA:\n${msg}\n\nNo se ha borrado el dibujo original.`);
       } finally {
         transcribing.value = false;
       }
@@ -2418,13 +2683,13 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
     // Navegación y gestión de páginas
     const prevNotesPage = async () => {
       await forceSaveFormImmediately();
-      const step = isTwoPageLayout.value ? 2 : 1;
+      const step = isNotesTwoPageLayout.value ? 2 : 1;
       currentNotesPageIndex.value = Math.max(0, currentNotesPageIndex.value - step);
     };
 
     const nextNotesPage = async () => {
       await forceSaveFormImmediately();
-      const step = isTwoPageLayout.value ? 2 : 1;
+      const step = isNotesTwoPageLayout.value ? 2 : 1;
       currentNotesPageIndex.value = Math.min(notesTotalPages.value - 1, currentNotesPageIndex.value + step);
     };
 
@@ -2674,6 +2939,7 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
       addFormDialog,
       addFormValid,
       newFormType,
+      newReformaType,
       newFormName,
       showSidebar,
       formSaveStatus,
@@ -2690,10 +2956,16 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
       addTarimaLinea,
       deleteTarimaLinea,
       onMedidaTarimaInput,
+      normalizeMedidaTarima,
       totalM2Computed,
       totalMLComputed,
       tiendasOptions,
       vendedoresOptions,
+      tarimaTiposOptions,
+      tarimaAcabadosOptions,
+      tarimaDesmontajeTiposOptions,
+      saveTarimaOption,
+      deleteTarimaOption,
       transcribing,
       transcribingStatus,
       transcribeActivePage,
@@ -2703,6 +2975,7 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
       sketchCanvasLeftRef,
       sketchCanvasRightRef,
       isTwoPageLayout,
+      isNotesTwoPageLayout,
       currentNotesPageIndex,
       notesPages,
       notesTotalPages,
@@ -2735,6 +3008,9 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
       brushSize,
       brushColor,
       showGrid,
+      activeSketchGridVisible,
+      isSketchGridVisible,
+      toggleActiveSketchGrid,
       colors,
       selectColor,
       activeNotesPageId,
@@ -2841,6 +3117,78 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
   background-color: rgba(226, 192, 96, 0.03);
 }
 
+.table-tarima-measures {
+  table-layout: fixed;
+  min-width: 680px;
+}
+
+.table-tarima-measures th,
+.table-tarima-measures td {
+  vertical-align: middle;
+}
+
+.table-tarima-measures th:nth-child(-n + 4),
+.table-tarima-measures td:nth-child(-n + 4) {
+  text-align: center;
+}
+
+:deep(.table-tarima-measures td:nth-child(-n + 4) input) {
+  text-align: center;
+}
+
+.tarima-calculated-value {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tarima-observations-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.tarima-observations-cell .table-input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.tarima-delete-button {
+  flex: 0 0 auto;
+}
+
+:deep(.tarima-new-row-input input:placeholder-shown) {
+  text-align: center;
+}
+
+:deep(.tarima-new-row-input input::placeholder) {
+  color: currentColor;
+  opacity: 0.62;
+  text-align: center;
+}
+
+.v-theme--light .tarima-calculated-value {
+  color: rgba(40, 36, 25, 0.8);
+}
+
+@media (max-width: 960px) {
+  .table-tarima-measures th {
+    padding-inline: 5px !important;
+    font-size: 0.76rem;
+  }
+
+  .table-tarima-measures td {
+    padding-inline: 4px !important;
+  }
+}
+
 .max-w-sm {
   max-width: 450px;
 }
@@ -2941,34 +3289,157 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
 }
 
 .color-dot-small {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  max-width: 26px;
+  max-height: 26px;
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  display: block;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-  flex-shrink: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  flex: 0 0 26px;
 }
 
 .colors-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: 16px;
-  margin-right: 16px;
+  gap: 6px;
+  min-width: max-content;
+  padding: 0;
+  flex: 0 0 auto;
 }
 
 .drawing-toolbar {
-  background-color: rgba(30, 30, 27, 0.4) !important;
+  display: grid !important;
+  grid-template-columns: minmax(480px, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0 !important;
+  background: linear-gradient(135deg, rgba(35, 35, 31, 0.92), rgba(24, 24, 21, 0.78)) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(10px);
   --active-color-border: #ffffff;
   --inactive-color-border: rgba(255, 255, 255, 0.3);
 }
 
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 1px 4px;
+  border: 1px solid rgba(226, 192, 96, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.toolbar-group--drawing {
+  justify-self: stretch;
+}
+
+.toolbar-group--actions,
+.toolbar-group--pages {
+  justify-self: end;
+}
+
+.toolbar-group__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-right: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  margin: 0;
+  flex: 0 0 1px;
+  background: rgba(226, 192, 96, 0.24);
+}
+
+.toolbar-group > .v-btn {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.toolbar-group .v-btn-toggle .v-btn {
+  min-width: 36px !important;
+  height: 36px;
+}
+
+.toolbar-ai-action {
+  min-width: 108px !important;
+  padding-inline: 8px !important;
+}
+
+.toolbar-ai-action__text {
+  margin-left: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
+
+.toolbar-status {
+  max-width: 155px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbar-page-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid rgba(226, 192, 96, 0.18);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.16);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .v-theme--light .drawing-toolbar {
-  background-color: #fcfbfa !important;
-  border: 1px solid rgba(226, 192, 96, 0.35) !important;
-  box-shadow: 0 2px 8px rgba(226, 192, 96, 0.08) !important;
+  background: linear-gradient(135deg, #fffefa, #f8f5ed) !important;
+  border: 0 !important;
+  box-shadow: 0 7px 20px rgba(78, 63, 26, 0.09) !important;
   --active-color-border: #4a3e1d;
   --inactive-color-border: rgba(74, 62, 29, 0.2);
+}
+
+.v-theme--light .toolbar-group {
+  border-color: rgba(139, 109, 36, 0.16);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.v-theme--light .toolbar-group__label {
+  color: rgba(74, 62, 29, 0.68);
+}
+
+.v-theme--light .toolbar-separator {
+  background: rgba(139, 109, 36, 0.22);
+}
+
+.v-theme--light .toolbar-page-indicator {
+  border-color: rgba(139, 109, 36, 0.18);
+  background: rgba(226, 192, 96, 0.1);
 }
 
 /* Inactive outlined buttons inside toolbar in light mode */
@@ -2990,7 +3461,107 @@ Genera un plano SVG actualizado, completamente acotado e inclinado (sloped) en s
   color: #4a3e1d !important;
 }
 .color-dot-small:hover {
-  transform: scale(1.2);
+  transform: scale(1.14);
+  box-shadow: 0 0 0 3px rgba(226, 192, 96, 0.16);
+}
+
+.notes-canvas-scroll {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.notes-canvas-scroll--single {
+  align-items: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.notes-page-shell {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.notes-page-shell--single {
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  flex: 0 0 100%;
+}
+
+@media (max-width: 1399px) {
+  .drawing-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .toolbar-group--drawing {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .toolbar-group--actions {
+    justify-self: start;
+  }
+
+  .toolbar-status {
+    flex-basis: 100%;
+    max-width: none;
+    padding: 2px 4px 0;
+    text-align: center;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .toolbar-group--actions .toolbar-group__label span,
+  .toolbar-group--pages .toolbar-group__label span {
+    display: none;
+  }
+
+  .toolbar-group--actions .toolbar-group__label,
+  .toolbar-group--pages .toolbar-group__label {
+    margin-right: 0;
+  }
+
+  .toolbar-ai-action {
+    min-width: 112px !important;
+    padding-inline: 10px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .drawing-toolbar {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 0;
+  }
+
+  .toolbar-group--drawing,
+  .toolbar-group--actions,
+  .toolbar-group--pages {
+    grid-column: 1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .toolbar-group--drawing,
+  .toolbar-group--actions {
+    flex-wrap: wrap;
+  }
+
+  .toolbar-group--pages {
+    justify-content: center;
+  }
+
+  .toolbar-group__label span {
+    display: none;
+  }
+
+  .toolbar-ai-action {
+    min-width: 108px !important;
+  }
 }
 
 .brush-size-dot {

@@ -1,0 +1,195 @@
+NUEVAS FICHAS
+=======================================
+
+En el diálogo para añadir nuevas fichas necesito que añadas la opción "Reforma". Cuando esta opción está elegida aparecera otra lista debajo (Tipo) con las opciones: Vivienda completa | Cocina | Baño. Según la opción que se elija la ficha implementará el cuestionario correspondiente de los que se detallan a continuación, manteniendo el resto de funcionalidades de las fichas.
+
+COMPLETA
+-------------------------------------------------
+
+1. Datos de contacto y vivienda
+  Datos de contacto
+  - Nombre y apellidos*, Teléfono*, Email*: texto.
+  - ¿Cómo nos has conocido?: radio [Google, Redes sociales, Recomendación, Otro].
+  - Otro (especificar): texto; cond. origen=Otro.
+  Datos de la vivienda
+  - Dirección (ciudad y barrio): texto.
+  - Tipo de vivienda: radio [Piso, Chalet, Local, Oficina].
+  - Año aproximado del edificio: número.
+  - Vivienda habitada durante la obra; Tiene ascensor: booleano (Sí).
+
+2. Albañilería y nivel de reforma
+  - Nivel: radio [Básica (funcional), Media (mejoras de calidad), Alta
+    (acabados premium)].
+  - Tabiques interiores (tipo): radio [Pladur, Ladrillo].
+  - Demolición de tabiques interiores/exteriores: booleano + «Especificar
+    situación» (área de texto condicional) para cada uno.
+  - Construcción de tabiques interiores/exteriores: booleano + «Especificar
+    situación» (área de texto) y «Aislamiento» (booleano), condicionales.
+
+3. Presupuesto y plazos
+  - Presupuesto aproximado (€): número.
+  - Inicio deseado: radio [Lo antes posible, En 1-3 meses, Más adelante].
+  - Fecha aproximada y Fecha límite: fecha; cond. Más adelante.
+
+4. Licencias y documentación
+  - Datos adjuntos disponibles: casillas [Planos, Medidas, Video, Fotos].
+  - Licencia de ocupación de vía pública: radio [Sí, No, No lo sé].
+  - Proyecto técnico: radio [Sí, No, No lo sé].
+
+5. Elementos generales
+  Aire acondicionado
+  - Actuaciones: casillas [Nuevo, Desmontaje y montaje, Material a valorar].
+  - Tipo nuevo: radio [Pre-instalación, Split, Conducto]; cond. Nuevo.
+  - Especificar estancias: texto por tipo, activo al elegirlo.
+  - Airzone: booleano; cond. Conducto. Observaciones: área de texto; cond.
+    Material a valorar.
+  Cuadro eléctrico
+  - Actuación: radio [Nuevo, Aprovechar actual, Cambio de diferenciales].
+  - Observaciones: área de texto.
+  Contadores
+  - Agua: cambio de ubicación (booleano) + número de contadores (número, cond.).
+  - Gas: cambio de ubicación (booleano) + ubicación (casillas [Interior,
+    Exterior], cond.).
+  Agua y calefacción
+  - Estado actual: radio [Caldera, Calentador, Termo, Aerotermia, Central].
+  - Estancia en la que se encuentra: texto.
+  - Estado final: casillas [Caldera, Calentador, Termo, Aerotermia].
+  - Caldera y calentador: acción [Aprovechar, Cambiar]; desmontar (si se
+    aprovecha); tomas de agua y gas [Aprovechar, Cambiar] (si se cambia);
+    material a valorar y observaciones.
+  - Termo: acción [Aprovechar Termo, Cambiar Termo]; desmontar o tomas de agua
+    [Aprovechar, Cambiar]; material a valorar y observaciones.
+  - Aerotermia: desmontar; servicios (casillas [Agua sanitaria, Climatización,
+    Material a valorar]); tipo de climatización [Suelo radiante/refrigerado,
+    Radiadores, Conductos]; observaciones si se valora material.
+  - Detalle importante para conocer: área de texto.
+
+
+COCINA
+----------------------------------------------------
+
+Tiene 13 secciones. Salvo donde se indique, «Material a valorar» es booleano
+que habilita Observaciones (área de texto), y cada sección incluye Comentarios
+(área de texto).
+
+1. Suelos
+  - Estado actual: radio [Cerámico, Parquet, Sintasol, Tarima, Moqueta].
+  - Estado final: radio [Cerámico, Parquet, T. Vinílica, T. Laminada, T. Madera].
+  - Material a valorar y observaciones.
+2. Rodapié
+  - Estado actual: radio [Cerámico, Madera].
+  - Estado final: radio [Cerámico, Madera, Otros] + texto «Otros» condicional.
+  - Material a valorar y observaciones.
+3. Paredes
+  - Base actual: radio [Ladrillo, Pladur, Otros] + texto condicional.
+  - Acabado actual: radio [Cerámico, Gota, Liso, Papel pintado, Otros] + texto.
+  - Tarea: radio [Tender yeso, Trasdosar pladur, Enfoscado, Otros]. Trasdosar
+    habilita tipo [Estándar, Pladur hidrófugo, Pladur acústico]; Otros, texto.
+  - Acabado final: radio [Cerámico, Gota, Liso, Microcemento, Papel pintado,
+    Otros] + texto condicional.
+  - Material a valorar + texto de m²/observaciones.
+4. Techos y molduras
+  - Techos: base actual [Escayola o Pladur, Yeso, Otros] + texto; acabado actual
+    [Gota, Liso, Otros] + texto; tareas (casillas) [Tender yeso, Pladur, Otros];
+    tipo de Pladur [Estándar, Pladur hidrófugo, Pladur acústico, Otros]; acabado
+    final [Gota, Liso, Microcemento, Otros] + texto; observaciones.
+  - Molduras: A demoler (booleano); estado final (casillas) [Moldura, Cortinero,
+    Sin moldura ni cornisa]; material a valorar + observaciones.
+5. Puerta de paso
+  - Cerco: radio [Precerco, Directo, Hierro, Sin puerta].
+  - Sistema: radio [Abatible, Casoneto, Corredera vista, Sin puerta, Otros]
+    + texto condicional. Alto: radio [2.03, 2.11, 2.20, Techo].
+  - Material a valorar + observaciones.
+6. Armario
+  - Demolición: radio [Desmontaje, Con obra]. Sistema: radio [Abatible,
+    Corredera]. Partes a reformar: casillas [Frente, Interior].
+  - Material a valorar + texto de características/medidas/observaciones.
+7. Mobiliario de cocina
+  - Demolición de mobiliario: booleano.
+  - Material a valorar + texto de características/medidas/observaciones.
+8. Ventanas y cerramientos
+  - Acabado [Aluminio, PVC]; sustitución [Ventana, Cerramiento, Puerta]; sistema
+    [Corredera, Abatible, Osciloparalela]; persiana [Manual, Motor, Sin persiana,
+    Seguridad]: todos radio.
+  - Color: radio [Blanco, Bicolor, Color] + texto si Bicolor/Color.
+  - Cristal: radio [Climalit, Planitherm, Cristal acústico, Butilar seguridad].
+  - Material a valorar + texto de medidas/observaciones.
+9. Aislamiento
+  - Paredes y techos: casillas [Copopren, Fibra vidrio, Lana roca, Fonodán,
+    Poliestileno extruido].
+10. Radiador
+  - Acción: radio [Aprovechar radiador, Cambiar radiador]. Si cambia: tipo
+    [Radiador aluminio, Radiador hierro, Toallero] y orientación [Horizontal,
+    Vertical]. Tomas: [Aprovechar, Modificación, Cambiar].
+  - Material a valorar + observaciones.
+11. Elementos de cocina
+  - Fontanería: radio [Completa, Por partes].
+  - Fregadero: tipo [Sobre encimera, Bajo encimera]; tomas [Se aprovechan,
+    Se cambian], cond. Por partes; material a valorar + observaciones.
+  - Lavavajillas: tipo [Libre instalación, Integrado]; tomas condicionales;
+    medida [45 cm, 60 cm]; material a valorar + observaciones.
+  - Lavadora y lava-secadora: tipo [Libre instalación, Integrado]; tomas
+    condicionales; material a valorar + observaciones.
+  - Secadora: tipo [Libre instalación, Integrado]; material a valorar + obs.
+  - Horno: alto [60 cm, 45 cm]; limpieza [Pirolítico, Aqua clean]; cocción
+    [Multifunción, Vapor]; material a valorar + observaciones.
+  - Microondas: alto [40 cm, 45 cm]; material a valorar + observaciones.
+  - Placa: [Inducción, Gas]; ancho [32, 60, 80, 90 cm]; material a valorar + obs.
+  - Campana: tipo [Techo, Decorativa, Integrada]; salida [12, 15 cm]; ancho
+    [60, 90, 120 cm, Otros] + texto; material a valorar + observaciones.
+  - Calienta platos: material a valorar + observaciones.
+  - Frigorífico: tipo [Libre instalación, Integrado]; ancho [60,70,80,90 cm];
+    alto [187,203 cm]; material a valorar + observaciones.
+12. Electricidad
+  - Alcance: radio [Completa, Por partes].
+  - Puntos de luz: booleanos [focos, lámparas, tira LED empotrada, tira LED de
+    superficie]; cada uno habilita número y Suministro; las tiras, metros lineales.
+  - Interruptores [Sencillo, Conmutado, Cruzado] y enchufes [Sencillo, Doble,
+    Triple, Cuádruple]: booleano + número condicional.
+  - Tomas especiales [Televisión, Teléfono, RJ45]: booleano + número condicional.
+  - Telefonillo: radio [Desplazar, Cambiar, Desmontar y montar]. Sonido:
+    casillas [Timbre, Zumbador]. Material a valorar + observaciones.
+13. Comentarios generales: área de texto.
+
+
+BAÑO
+-----------------------------------------
+
+Tiene 12 secciones. Las secciones 1 a 9 son las mismas que en Cocina, excepto
+«Mobiliario de cocina»: Suelos, Rodapié, Paredes, Techos y molduras, Puerta de
+paso, Armario, Ventanas y cerramientos, Aislamiento y Radiador. Conservan los
+campos, tipos, opciones y condiciones indicados en los puntos anteriores.
+
+10. Elementos de baño
+  - Fontanería: radio [Completa, Por partes].
+  - Mueble de baño: acción [Demolición, Aprovechar actual, Nuevo]; tomas
+    [Se aprovechan tomas agua, Se cambian tomas agua] si es nuevo y fontanería
+    Por partes; luz en parte inferior (booleano); material a valorar + obs.
+  - Espejo: luz [Luz interruptor, Luz directa, Sin luz]; material a valorar + obs.
+  - Grifo de lavabo: acción [Aprovechar actual, Nuevo]; tipo [Superficie,
+    Empotrado] si nuevo; material a valorar + observaciones.
+  - Bañera: acción [Demolición, Aprovechar actual, Nuevo]; tipo [Vista,
+    Empotrado] si nueva; material a valorar + observaciones.
+  - Grifo de bañera: acción [Aprovechar actual, Nuevo]; tipo [Superficie,
+    Empotrado, Pie] si nuevo; material a valorar + observaciones.
+  - Plato de ducha: acción [Demolición, Aprovechar actual, Nuevo]; tipo
+    [Plato de ducha, Plato de obra] si nuevo; material a valorar + observaciones.
+  - Grifo de ducha: acción [Aprovechar actual, Nuevo]; tipo [Superficie,
+    Empotrado] si nuevo; material a valorar + observaciones.
+  - Mampara: acción [Aprovechar actual, Nuevo]; si nueva, material a valorar + obs.
+  - Bidé e inodoro: acción [Demolición, Desmontaje y montaje, Nuevo]; tipo
+    [Pie, Suspendido] si nuevo; tomas [Aprovechar, Cambiar] si fontanería Por
+    partes; material a valorar + observaciones.
+  - Extractor: ubicación [Techo, Pared]; alimentación [Luz directa, Luz
+    interruptor]; material a valorar + observaciones; comentarios.
+11. Electricidad
+  - Alcance: radio [Completa, Por partes].
+  - Puntos de luz: focos, lámparas, tira LED empotrada y de superficie:
+    booleano + número + suministro; las tiras también metros lineales.
+  - Material a valorar de puntos de luz + características/observaciones.
+  - Interruptores [Sencillo, Conmutado, Cruzado] y enchufes [Sencillo, Doble,
+    Triple, Cuádruple]: booleano + número condicional.
+  - Material a valorar de mecanismos + observaciones.
+  - No contiene tomas especiales, telefonillo ni sonido.
+12. Comentarios generales: área de texto.
+

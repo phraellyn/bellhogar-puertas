@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { storage } from './firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { generateFilteredProjectPDF } from './pdfReportGenerator';
 
 // EmailJS Keys provided by the user
 const EMAILJS_PUBLIC_KEY = 'ePuq7ToVavxXwByF2';
@@ -13,44 +14,138 @@ const EMAILJS_TEMPLATE_ID = 'template_1asqc2u';
  * Supports compressing via JPEG format and quality parameters.
  * Uses CORS-anonymous requests to prevent canvas tainting with Firebase Storage URLs.
  */
-const loadImageAsBase64 = (url, format = 'png', quality = 1.0) => {
-  return new Promise((resolve) => {
-    if (!url) return resolve(null);
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // Bypass CORS issues for canvas base64 conversion
-    img.onload = function () {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = this.width;
-        canvas.height = this.height;
-        const ctx = canvas.getContext('2d');
-        
-        if (format === 'jpeg') {
-          // Fill white background to prevent transparent areas from turning black in JPEG
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+const loadImageElement = url => new Promise(resolve => {
+  if (!url) return resolve(null);
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.onload = () => resolve(image);
+  image.onerror = () => resolve(null);
+  image.src = url;
+});
+
+const canvasAsBase64 = (sourceCanvas, format = 'png', quality = 1, cropToContent = false, requireContent = false) => {
+  const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = sourceCanvas.width;
+  let sourceHeight = sourceCanvas.height;
+
+  if (cropToContent || requireContent) {
+    const pixels = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height).data;
+    let minX = sourceCanvas.width;
+    let minY = sourceCanvas.height;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < sourceCanvas.height; y += 1) {
+      for (let x = 0; x < sourceCanvas.width; x += 1) {
+        const offset = (y * sourceCanvas.width + x) * 4;
+        const alpha = pixels[offset + 3];
+        const isWhite = pixels[offset] > 248 && pixels[offset + 1] > 248 && pixels[offset + 2] > 248;
+        if (alpha > 8 && !isWhite) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
         }
-        
-        ctx.drawImage(img, 0, 0);
-        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        const dataURL = canvas.toDataURL(mimeType, quality);
-        resolve(dataURL);
-      } catch (err) {
-        console.error("CORS / Security error loading image for PDF:", err);
-        resolve(null);
       }
-    };
-    img.onerror = function () {
-      resolve(null);
-    };
-    img.src = url;
-  });
+    }
+    if (maxX < 0) return null;
+    if (cropToContent) {
+      const contentWidth = maxX - minX + 1;
+      const contentHeight = maxY - minY + 1;
+      const padding = Math.max(24, Math.round(Math.max(contentWidth, contentHeight) * 0.04));
+      sourceX = Math.max(0, minX - padding);
+      sourceY = Math.max(0, minY - padding);
+      sourceWidth = Math.min(sourceCanvas.width - sourceX, maxX - minX + 1 + padding * 2);
+      sourceHeight = Math.min(sourceCanvas.height - sourceY, maxY - minY + 1 + padding * 2);
+    }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sourceWidth;
+  canvas.height = sourceHeight;
+  const ctx = canvas.getContext('2d');
+  if (format === 'jpeg') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  ctx.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+  return canvas.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png', quality);
+};
+
+const loadImageAsBase64 = async (url, format = 'png', quality = 1.0, cropToContent = false, requireContent = false) => {
+  try {
+    const image = await loadImageElement(url);
+    if (!image) return null;
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = image.naturalWidth || image.width;
+    sourceCanvas.height = image.naturalHeight || image.height;
+    sourceCanvas.getContext('2d').drawImage(image, 0, 0);
+    return canvasAsBase64(sourceCanvas, format, quality, cropToContent, requireContent);
+  } catch (err) {
+    console.error('CORS / Security error loading image for PDF:', err);
+    return null;
+  }
+};
+
+export const renderDrawingForPDF = async drawing => {
+  if (!drawing?.svg) {
+    return loadImageAsBase64(drawing?.url, 'jpeg', 0.82, drawing?.cropToContent, true);
+  }
+
+  let objectUrl = null;
+  try {
+    const viewBox = drawing.svg.match(/viewBox\s*=\s*["']\s*([\-\d.]+)\s+([\-\d.]+)\s+([\d.]+)\s+([\d.]+)\s*["']/i);
+    const viewBoxWidth = Number(viewBox?.[3]) || 1200;
+    const viewBoxHeight = Number(viewBox?.[4]) || 900;
+    // Los SVG de la interfaz usan width/height al 100%. Para rasterizarlos sin
+    // deformación les damos primero un tamaño intrínseco con la relación del viewBox.
+    const rasterSvg = drawing.svg.replace(/<svg([^>]*)>/i, (match, attributes) => {
+      const cleanAttributes = attributes.replace(/\s(?:width|height)\s*=\s*["'][^"']*["']/gi, '');
+      return `<svg${cleanAttributes} width="${viewBoxWidth}" height="${viewBoxHeight}">`;
+    });
+    const svgBlob = new Blob([rasterSvg], { type: 'image/svg+xml;charset=utf-8' });
+    objectUrl = URL.createObjectURL(svgBlob);
+    const [svgImage, strokesImage] = await Promise.all([
+      loadImageElement(objectUrl),
+      drawing.url ? loadImageElement(drawing.url) : Promise.resolve(null)
+    ]);
+    if (!svgImage && !strokesImage) return null;
+
+    const width = strokesImage?.naturalWidth || Math.min(1800, Math.max(900, svgImage?.naturalWidth || 1600));
+    const height = strokesImage?.naturalHeight || Math.round(width * (viewBoxHeight / viewBoxWidth));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = Math.max(1, height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (svgImage) {
+      // Equivale a preserveAspectRatio="xMidYMid meet", que es exactamente la
+      // forma en que el plano se ve en el lienzo y durante el autoescalado.
+      const scale = Math.min(canvas.width / viewBoxWidth, canvas.height / viewBoxHeight);
+      const drawWidth = viewBoxWidth * scale;
+      const drawHeight = viewBoxHeight * scale;
+      const drawX = (canvas.width - drawWidth) / 2;
+      const drawY = (canvas.height - drawHeight) / 2;
+      ctx.drawImage(svgImage, drawX, drawY, drawWidth, drawHeight);
+    }
+    if (strokesImage) ctx.drawImage(strokesImage, 0, 0, canvas.width, canvas.height);
+    return canvasAsBase64(canvas, 'jpeg', 0.86, true, true);
+  } catch (err) {
+    console.error('Error rendering drawing for PDF:', err);
+    return null;
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
 };
 
 /**
  * Generates a structured PDF document from a project object.
  */
-export const generateProjectPDF = async (project) => {
+// Conservamos temporalmente el generador anterior como referencia de compatibilidad.
+// Rollup lo elimina del bundle al no estar exportado ni utilizarse.
+const generateLegacyProjectPDF = async (project) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -122,6 +217,7 @@ export const generateProjectPDF = async (project) => {
           if (obj.integrada) opts.push('Integrada');
           if (obj.telescopica) opts.push('Telescópica');
           if (obj.filtroCarbon) opts.push('Filtro carbón');
+          if (obj.enPlaca) opts.push('En placa');
           if (obj.ancho30) opts.push('Ancho 30');
           if (obj.ancho60) opts.push('Ancho 60');
           if (obj.ancho90) opts.push('Ancho 90');
@@ -198,9 +294,8 @@ export const generateProjectPDF = async (project) => {
         const fmtBool = (val) => val ? 'SÍ' : 'NO';
         const faqBody = [
           ['¿Obra en la cocina?', fmtBool(datos.preguntas?.obraCocina), '¿Demoler mobiliario?', fmtBool(datos.preguntas?.demolerMobiliario)],
-          ['¿Muebles al techo?', fmtBool(datos.preguntas?.mueblesTecho), '¿Cierre a techo?', fmtBool(datos.preguntas?.cierreTecho)],
-          ['¿Montaje y transporte?', fmtBool(datos.preguntas?.montajeTransporte), 'Altura de la cocina:', datos.preguntas?.alturaCocina || ''],
-          ['¿Desean comer en cocina?', fmtBool(datos.preguntas?.deseanComerCocina) + (datos.preguntas?.deseanComerCocina ? ` (${datos.preguntas.comerDetalle?.mesa ? 'Mesa' : ''}${datos.preguntas.comerDetalle?.barra ? 'Barra' : ''} - Personas: ${datos.preguntas.comerDetalle?.personas})` : ''), 'Altura muebles sup.:', (datos.preguntas?.alturaMueblesSuperiores || '') + (datos.preguntas?.alturaMueblesSuperiores === 'Otros' ? `: ${datos.preguntas.alturaMueblesOtros}` : '')],
+          ['Altura de la cocina:', datos.preguntas?.alturaCocina || '', '', ''],
+          ['¿Desean comer en cocina?', fmtBool(datos.preguntas?.deseanComerCocina) + (datos.preguntas?.deseanComerCocina ? ` (${datos.preguntas.comerDetalle?.mesa ? 'Mesa' : ''}${datos.preguntas.comerDetalle?.barra ? 'Barra' : ''} - Personas: ${datos.preguntas.comerDetalle?.personas})` : ''), '', ''],
           ['Instalación agua/calefacc.:', (datos.preguntas?.instalacionAgua || '') + (datos.preguntas?.instalacionAgua === 'Otros' ? `: ${datos.preguntas.instalacionAguaOtros}` : ''), '', '']
         ];
 
@@ -262,14 +357,39 @@ export const generateProjectPDF = async (project) => {
           headStyles: { fillColor: [85, 82, 75] }
         });
 
+      } else if (form.tipo === 'reforma') {
+        const respuestas = form.datos?.respuestas || {};
+        const formatValue = (value) => {
+          if (value === true) return 'SÍ';
+          if (value === false) return 'NO';
+          if (value && typeof value === 'object') {
+            return Object.entries(value).filter(([, active]) => active).map(([key]) => key).join(', ');
+          }
+          return value || '';
+        };
+        const label = (key) => key.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+        const rows = Object.entries(respuestas)
+          .filter(([, value]) => formatValue(value) !== '')
+          .map(([key, value]) => [label(key), formatValue(value)]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [[`Cuestionario de reforma: ${(form.subtipo || 'completa').toUpperCase()}`, 'Respuesta']],
+          body: rows.length ? rows : [['Sin respuestas todavía', '']],
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [85, 82, 75] },
+          columnStyles: { 0: { cellWidth: 70, fontStyle: 'bold' } }
+        });
+
       } else if (form.tipo === 'tarimas') {
         const datos = form.datos;
 
         // Details Grid
         const techBody = [
-          ['Modelo Tarima:', `Grosor: ${datos.modeloTarima.grosor || ''} | Aislante: ${datos.modeloTarima.aislante || ''} | Modelo: ${datos.modeloTarima.modelo || ''}`.trim(), 'Rodapié:', `Modelo: ${datos.rodapie.modelo || ''} | Alto: ${datos.rodapie.alto || ''} | Grosor: ${datos.rodapie.grosor || ''} | Color: ${datos.rodapie.color || ''} | Quitar rodapié: ${datos.preparacionSuelo?.quitarRodapieCeramicoYRematar ? 'SÍ' : 'NO'}`.trim()],
+          ['Modelo Tarima:', `Tipo: ${datos.modeloTarima.tipo || ''} | Acabado: ${datos.modeloTarima.acabado || ''} | Grosor: ${datos.modeloTarima.grosor || ''} | Aislante: ${datos.modeloTarima.aislante || ''}`.trim(), 'Rodapié:', `Modelo: ${datos.rodapie.modelo || ''} | Alto: ${datos.rodapie.alto || ''} | Grosor: ${datos.rodapie.grosor || ''} | Color: ${datos.rodapie.color || ''} | Quitar rodapié: ${datos.preparacionSuelo?.quitarRodapieCeramicoYRematar ? 'SÍ' : 'NO'}`.trim()],
           ['Juntas:', `Transición: ${datos.juntas.transicion ? 'SÍ' : 'NO'} | Dilatación: ${datos.juntas.dilatacion ? 'SÍ' : 'NO'} | Mamperlán Tira: ${datos.juntas.tira ? 'SÍ' : 'NO'} | Mamperlán Mecanizado: ${datos.juntas.mecanizado ? 'SÍ' : 'NO'}`.trim(), 'Cortes/Servicios:', `Picado Suelo: ${datos.preparacionSuelo?.picadoSuelo ? 'SÍ' : 'NO'} | Corte Puertas: ${datos.cortesServicios?.cortePuertas ? 'SÍ' : 'NO'} | Echar Solera: ${datos.preparacionSuelo?.echarSolera ? 'SÍ' : 'NO'} | Corte Puertas Blindadas: ${datos.cortesServicios?.cortePuertasBlindadas ? 'SÍ' : 'NO'} | Echar Pasta Niveladora: ${datos.preparacionSuelo?.echarPastaNiveladora ? 'SÍ' : 'NO'} | Movimiento Muebles: ${datos.cortesServicios?.movimientoMuebles ? 'SÍ' : 'NO'}`.trim()],
-          ['Colocación sobre:', `${datos.preparacionSuelo?.colocacionSobre || ''} ${datos.preparacionSuelo?.colocacionSobreOtros ? `(${datos.preparacionSuelo.colocacionSobreOtros})` : ''}`.trim(), '', '']
+          ['Desmontaje suelo:', `${datos.bisagras?.desmontajeSuelo ? 'SÍ' : 'NO'}${datos.bisagras?.desmontajeSueloTipo ? ` | Tipo: ${datos.bisagras.desmontajeSueloTipo}` : ''}`, 'Colocación sobre:', `${datos.preparacionSuelo?.colocacionSobre || ''} ${datos.preparacionSuelo?.colocacionSobreOtros ? `(${datos.preparacionSuelo.colocacionSobreOtros})` : ''}`.trim()]
         ];
 
         autoTable(doc, {
@@ -341,11 +461,11 @@ export const generateProjectPDF = async (project) => {
           form.dibujos.bocetoPages.forEach((page, idx) => {
             if (page.url) {
               const pageTitle = form.dibujos.bocetoPages.length > 1 ? `Boceto de Plano (Pág. ${idx + 1})` : 'Boceto de Plano';
-              dUrls.push({ title: pageTitle, url: page.url });
+              dUrls.push({ title: pageTitle, url: page.url, cropToContent: true });
             }
           });
         } else if (form.dibujos.bocetoUrl) {
-          dUrls.push({ title: 'Boceto de Plano', url: form.dibujos.bocetoUrl });
+          dUrls.push({ title: 'Boceto de Plano', url: form.dibujos.bocetoUrl, cropToContent: true });
         }
 
         // Anotaciones
@@ -361,7 +481,7 @@ export const generateProjectPDF = async (project) => {
         }
 
         for (const item of dUrls) {
-          const base64Img = await loadImageAsBase64(item.url, 'jpeg', 0.75);
+          const base64Img = await loadImageAsBase64(item.url, 'jpeg', 0.75, item.cropToContent);
           if (base64Img) {
             currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : currentY + 8;
             if (currentY > 185) {
@@ -410,6 +530,11 @@ export const generateProjectPDF = async (project) => {
 
   return doc.output('blob');
 };
+
+export const generateProjectPDF = async (project) => generateFilteredProjectPDF(project, {
+  loadImage: loadImageAsBase64,
+  loadDrawing: renderDrawingForPDF
+});
 
 /**
  * Uploads a PDF blob to Firebase Storage and returns the public download URL.
