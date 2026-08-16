@@ -531,10 +531,10 @@ const generateLegacyProjectPDF = async (project) => {
   return doc.output('blob');
 };
 
-export const generateProjectPDF = async (project) => generateFilteredProjectPDF(project, {
+export const generateProjectPDF = async (project, options = {}) => generateFilteredProjectPDF(project, {
   loadImage: loadImageAsBase64,
   loadDrawing: renderDrawingForPDF
-});
+}, options);
 
 /**
  * Uploads a PDF blob to Firebase Storage and returns the public download URL.

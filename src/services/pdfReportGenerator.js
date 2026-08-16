@@ -4,9 +4,10 @@ import { buildProjectReportModel } from './reportContent.js';
 
 const PAGE_BOTTOM = 274;
 
-export const generateFilteredProjectPDF = async (project, loaders = {}) => {
+export const generateFilteredProjectPDF = async (project, loaders = {}, options = {}) => {
   const loadImage = typeof loaders === 'function' ? loaders : loaders.loadImage;
   const loadDrawing = typeof loaders === 'object' ? loaders.loadDrawing : null;
+  const includeGeneralData = options.includeGeneralData !== false;
   const model = buildProjectReportModel(project);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const logoBase64 = loadImage ? await loadImage('/BellHogar Claro.png') : null;
@@ -61,7 +62,7 @@ export const generateFilteredProjectPDF = async (project, loaders = {}) => {
   doc.text('INFORME DE MEDICIÓN', 15, cursorY);
   cursorY += 7;
 
-  if (model.general.length) {
+  if (includeGeneralData && model.general.length) {
     const generalRows = [];
     for (let index = 0; index < model.general.length; index += 2) {
       const first = model.general[index];

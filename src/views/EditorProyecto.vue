@@ -3,7 +3,7 @@
     <!-- VISTA PRINCIPAL: Panel de Control del Proyecto (Datos y Fichas en 50/50 split) -->
     <v-row class="w-100 h-desktop-100 ma-0 align-stretch" v-if="!selectedForm">
       <!-- Ficha de Datos Comunes del Cliente (50% de ancho en Desktop/Tablet) -->
-      <v-col cols="12" lg="6" class="pa-2 h-desktop-100 d-flex flex-column">
+      <v-col v-if="!embedded" cols="12" lg="6" class="pa-2 h-desktop-100 d-flex flex-column">
         <v-card color="surface" class="elevation-2 border-golden h-desktop-100 d-flex flex-column" rounded="lg">
           <v-card-title class="pa-4 bg-secondary border-b d-flex justify-space-between align-center flex-wrap gap-2">
             <span class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
@@ -158,9 +158,42 @@
       </v-col>
 
       <!-- Lista de Fichas Técnicas Añadidas (50% de ancho) -->
-      <v-col cols="12" lg="6" class="pa-2 h-desktop-100 d-flex flex-column">
-        <v-card color="surface" class="elevation-2 border-golden h-desktop-100 d-flex flex-column overflow-hidden" rounded="lg">
-          <v-card-title class="pa-4 bg-secondary border-b d-flex justify-space-between align-center">
+      <v-col cols="12" :lg="embedded ? 12 : 6" class="pa-2 h-desktop-100 d-flex flex-column">
+        <v-toolbar
+          v-if="embedded"
+          color="surface"
+          density="comfortable"
+          class="embed-actions elevation-2 border-golden rounded-lg mb-2 px-2"
+        >
+          <v-spacer></v-spacer>
+          <v-btn
+            size="small"
+            color="primary"
+            prepend-icon="mdi-email"
+            variant="flat"
+            class="font-weight-bold mr-2"
+            @click="openSendEmailDialog"
+          >
+            Enviar por email
+          </v-btn>
+          <v-btn
+            size="small"
+            color="primary"
+            prepend-icon="mdi-file-pdf-box"
+            variant="outlined"
+            class="font-weight-bold mr-2"
+            :loading="downloadingPdf"
+            @click="downloadProjectPDF"
+          >
+            Descargar PDF
+          </v-btn>
+        </v-toolbar>
+        <v-card
+          color="surface"
+          :class="['elevation-2 border-golden d-flex flex-column overflow-hidden', embedded ? 'flex-grow-1' : 'h-desktop-100']"
+          rounded="lg"
+        >
+          <v-card-title class="pa-4 bg-secondary border-b d-flex justify-space-between align-center flex-wrap gap-2">
             <span class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
               <v-icon color="primary" class="mr-2">mdi-home-plus</v-icon>
               Fichas Técnicas ({{ project.formularios?.length || 0 }})
@@ -1070,8 +1103,42 @@
           />
         </v-window-item>
 
-        <!-- 2. PESTAÑA ANOTACIONES TÁCTILES -->
-        <v-window-item value="notes" :eager="true" class="fill-height pa-1">
+        <!-- 2. PESTAÑA ANOTACIONES -->
+        <v-window-item value="notes" class="fill-height pa-1">
+          <div class="fill-height d-flex flex-column">
+            <div class="d-flex align-center justify-space-between mb-4">
+              <h2 class="text-h6 font-weight-bold text-white">Anotaciones</h2>
+              <div class="d-flex align-center gap-2">
+                <v-btn icon="mdi-chevron-left" size="small" variant="text" color="white" class="mr-2" :disabled="notesLeftPageIndex === 0" @click="prevNotesPage" title="Página anterior"></v-btn>
+                <span class="text-body-2 font-weight-bold text-primary mr-2">{{ notesLeftPageIndex + 1 }}/{{ notesTotalPages }}</span>
+                <v-btn icon="mdi-chevron-right" size="small" variant="text" color="white" class="mr-2" :disabled="notesRightPageIndex >= notesTotalPages" @click="nextNotesPage" title="Página siguiente"></v-btn>
+                <v-btn icon="mdi-plus-box" size="small" color="primary" variant="flat" class="mr-2" @click="addNotesPage" title="Añadir página"></v-btn>
+                <v-btn icon="mdi-minus-box" size="small" color="error" variant="outlined" :disabled="notesTotalPages <= 1" @click="deleteActiveNotesPage" title="Borrar página actual"></v-btn>
+              </div>
+            </div>
+            <template v-if="notesLeftPage">
+              <v-textarea
+                :model-value="notesLeftPage.textoReconocido || ''"
+                :label="`Anotaciones — Página ${notesLeftPageIndex + 1}`"
+                placeholder="Escribe o dicta aquí las anotaciones de esta página…"
+                variant="outlined"
+                color="primary"
+                rows="20"
+                auto-grow
+                hide-details
+                class="notes-textarea w-100"
+                @update:model-value="updateActiveNotesText"
+              ></v-textarea>
+              <span class="text-caption text-grey-lighten-1 mt-2 d-flex align-center">
+                <v-icon size="small" class="mr-1" color="success">mdi-cloud-check</v-icon>
+                Los cambios se guardan automáticamente
+              </span>
+            </template>
+          </div>
+        </v-window-item>
+
+        <!-- Implementación anterior conservada temporalmente sin renderizar para no alterar datos históricos. -->
+        <v-window-item v-if="false" value="notes" :eager="true" class="fill-height pa-1">
           <div class="d-flex flex-column h-100 fill-height">
             <!-- Barra de Dibujo y Navegación Unificada -->
             <div class="flex-grow-0 flex-shrink-0 drawing-toolbar rounded-lg mb-1">
@@ -1761,17 +1828,27 @@ import { httpsCallable } from 'firebase/functions';
 
 export default {
   name: 'EditorProyecto',
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    embedded: {
+      type: Boolean,
+      default: false,
+    },
+  },
   components: {
     SketchCanvas,
     FileUploader,
     ReformaCuestionario,
   },
-  setup() {
+  setup(props) {
     const route = useRoute();
     const projectStore = useProjectStore();
 
     // ID del proyecto cargado
-    const projectId = route.params.id;
+    const projectId = props.id || route.params.id;
 
     // Estados de la vista
     const selectedFormId = ref(null);
@@ -1845,13 +1922,18 @@ export default {
     const targetEmail = ref('');
     const sendingEmail = ref(false);
     const emailStatusMessage = ref('');
+    const downloadingPdf = ref(false);
 
     // Estado del panel lateral colapsable (se inicia según el ancho del viewport)
     const showSidebar = ref(true);
 
     // Cargar proyecto completo
     onMounted(async () => {
-      await projectStore.fetchProjectById(projectId);
+      if (props.embedded) {
+        await projectStore.fetchOrCreateProjectById(projectId);
+      } else {
+        await projectStore.fetchProjectById(projectId);
+      }
       await projectStore.fetchConfig();
       // Mantener selectedFormId en null al inicio para que se muestre el panel de control general (datos del cliente + estancias)
       selectedFormId.value = null;
@@ -2712,6 +2794,30 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
       }
     };
 
+    let notesTextSaveTimeout = null;
+    const saveNotesTextImmediately = async () => {
+      if (notesTextSaveTimeout) {
+        clearTimeout(notesTextSaveTimeout);
+        notesTextSaveTimeout = null;
+      }
+      const page = notesLeftPage.value;
+      if (!page || !selectedForm.value) return;
+      await projectStore.updatePageText(projectId, selectedForm.value.id, page.id, page.textoReconocido || '');
+    };
+
+    const updateActiveNotesText = (value) => {
+      const page = notesLeftPage.value;
+      if (!page) return;
+      page.textoReconocido = value || '';
+      activeNotesPageId.value = page.id;
+      if (notesTextSaveTimeout) clearTimeout(notesTextSaveTimeout);
+      notesTextSaveTimeout = setTimeout(() => {
+        saveNotesTextImmediately().catch((err) => {
+          console.error('Error al guardar las anotaciones:', err);
+        });
+      }, 800);
+    };
+
     const triggerNotesUndo = () => {
       if (activeNotesPageId.value === notesRightPage.value?.id && notesCanvasRightRef.value) {
         notesCanvasRightRef.value.undo();
@@ -2824,14 +2930,11 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
         }
       }
 
-      // C. Guardar dibujos del canvas si están pendientes (dirty)
+      // C. Guardar el texto de anotaciones de la página activa si está pendiente.
+      await saveNotesTextImmediately();
+
+      // D. Guardar dibujos del canvas de bocetos si están pendientes (dirty)
       const promises = [];
-      if (notesCanvasLeftRef.value) {
-        promises.push(notesCanvasLeftRef.value.saveDrawing());
-      }
-      if (notesCanvasRightRef.value) {
-        promises.push(notesCanvasRightRef.value.saveDrawing());
-      }
       if (sketchCanvasLeftRef.value) {
         promises.push(sketchCanvasLeftRef.value.saveDrawing());
       }
@@ -2905,7 +3008,9 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
             await forceSaveFormImmediately();
 
             // B. Generar el blob del PDF
-            const pdfBlob = await generateProjectPDF(project.value);
+            const pdfBlob = await generateProjectPDF(project.value, {
+              includeGeneralData: !props.embedded
+            });
             
             // C. Subir a storage
             emailStatusMessage.value = 'Subiendo PDF a Firebase Storage...';
@@ -2930,8 +3035,34 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
       }
     };
 
+    const downloadProjectPDF = async () => {
+      if (!project.value || downloadingPdf.value) return;
+
+      downloadingPdf.value = true;
+      try {
+        await forceSaveFormImmediately();
+        const pdfBlob = await generateProjectPDF(project.value, {
+          includeGeneralData: !props.embedded
+        });
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `medicion-${projectId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Error al generar el PDF local:', err);
+        alert('No se pudo generar el PDF: ' + err.message);
+      } finally {
+        downloadingPdf.value = false;
+      }
+    };
+
     return {
       project,
+      embedded: props.embedded,
       selectedFormId,
       selectedForm,
       activeTab,
@@ -2995,6 +3126,7 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
       addNotesPage,
       deleteNotesPage,
       deleteActiveNotesPage,
+      updateActiveNotesText,
       triggerNotesUndo,
       triggerNotesClear,
       prevSketchPage,
@@ -3025,8 +3157,10 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
       targetEmail,
       sendingEmail,
       emailStatusMessage,
+      downloadingPdf,
       openSendEmailDialog,
       submitSendEmail,
+      downloadProjectPDF,
     };
   },
 };
@@ -3039,6 +3173,10 @@ La imagen contiene ese plano y los trazos nuevos encima. Conserva la geometría 
   width: 100%;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.notes-textarea :deep(textarea) {
+  min-height: 30em;
 }
 
 @media (min-width: 600px) {

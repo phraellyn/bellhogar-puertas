@@ -1,7 +1,7 @@
 <template>
   <v-app :theme="currentTheme">
     <!-- Barra de Navegación Premium -->
-    <v-app-bar color="secondary" elevation="3" class="px-3 border-b-golden">
+    <v-app-bar v-if="!$route.meta.embedded" color="secondary" elevation="3" class="px-3 border-b-golden">
       <!-- Logotipo Corporativo de BellHogar (Dinámico según el tema) -->
       <img
         :src="currentTheme === 'dark' ? '/BellHogar Oscuro.png' : '/BellHogar Claro.png'"
@@ -44,7 +44,7 @@
 
     <!-- Área de Contenido Principal -->
     <v-main class="bg-background">
-      <v-container fluid class="pa-4 pa-sm-6 fill-height align-start">
+      <v-container fluid :class="$route.meta.embedded ? 'pa-0' : 'pa-4 pa-sm-6 fill-height align-start'">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -57,6 +57,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useProjectStore } from './store/projectStore';
 
 export default {
@@ -64,6 +65,7 @@ export default {
   setup() {
     const currentTheme = ref('dark');
     const projectStore = useProjectStore();
+    const route = useRoute();
 
     const toggleTheme = () => {
       currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark';
@@ -75,7 +77,9 @@ export default {
       if (savedTheme) {
         currentTheme.value = savedTheme;
       }
-      projectStore.fetchConfig();
+      if (!route.meta.embedded) {
+        projectStore.fetchConfig();
+      }
     });
 
     return {

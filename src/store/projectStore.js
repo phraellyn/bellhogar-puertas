@@ -9,6 +9,7 @@ import {
   deleteDoc, 
   getDoc,
   setDoc,
+  runTransaction,
   query,
   orderBy,
   serverTimestamp
@@ -73,6 +74,47 @@ export const useProjectStore = defineStore('project', {
       } catch (err) {
         console.error('Error al obtener proyecto:', err);
         this.error = err.message;
+        return null;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Obtiene un proyecto por un ID externo o lo crea vacío si todavía no existe.
+    // El uso de una transacción evita que una segunda visita sobrescriba el proyecto.
+    async fetchOrCreateProjectById(projectId) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const docRef = doc(db, 'proyectos', projectId);
+        await runTransaction(db, async (transaction) => {
+          const docSnap = await transaction.get(docRef);
+          if (docSnap.exists()) return;
+
+          transaction.set(docRef, {
+            cliente: '',
+            direccion: '',
+            email: '',
+            telefonoMovil: '',
+            telefonoFijo: '',
+            vendedor: '',
+            tienda: '',
+            fechaVisita: '',
+            fechaEjecucion: '',
+            zonaParquimetro: 'No',
+            estado: 'borrador',
+            formularios: [],
+            fechaCreacion: serverTimestamp(),
+            fechaModificacion: serverTimestamp()
+          });
+        });
+
+        const docSnap = await getDoc(docRef);
+        this.currentProject = normalizeProject({ id: docSnap.id, ...docSnap.data() });
+        return this.currentProject;
+      } catch (err) {
+        console.error('Error al obtener o crear el proyecto:', err);
+        this.error = err.message || 'No se pudo cargar el proyecto.';
         return null;
       } finally {
         this.loading = false;
@@ -272,7 +314,10 @@ export const useProjectStore = defineStore('project', {
           bocetoPages: [{ id: 'page-sketch-' + Math.random().toString(36).substring(2, 9), url: null }]
         },
         archivos: [],
-        datos: baseDatos
+        datos: {
+          ...baseDatos,
+          anotaciones: ''
+        }
       };
 
       const updatedFormularios = [...this.currentProject.formularios, newForm];
@@ -687,6 +732,12 @@ function normalizeProject(proj) {
         ...page,
         textoReconocido: page.textoReconocido || ""
       }));
+    }
+    if (typeof form.datos.anotaciones !== 'string') {
+      form.datos.anotaciones = form.dibujos.anotacionesPages
+        .map(page => page.textoReconocido || '')
+        .filter(Boolean)
+        .join('\n\n');
     }
     if (form.tipo === 'tarimas') {
       form.datos.modeloTarima = { tipo: "", acabado: "", grosor: "", aislante: "", ...form.datos.modeloTarima };

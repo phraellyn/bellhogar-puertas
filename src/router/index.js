@@ -16,6 +16,13 @@ const routes = [
     props: true,
   },
   {
+    path: '/embed/:id',
+    name: 'EmbedProyecto',
+    component: EditorProyecto,
+    props: (route) => ({ id: route.params.id, embedded: true }),
+    meta: { embedded: true },
+  },
+  {
     path: '/configuracion',
     name: 'Configuracion',
     component: Configuracion,
